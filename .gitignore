@@ -39,11 +39,10 @@ debug/
 # Duplicate asset at repo root (canonical: src/renderer/assets/)
 /mountain-river.png
 
-# Editor / OS
+# Editor / OS / local tooling (not for the public tree)
 .idea/
 .vscode/
+.cursor/
+docs/
 *.swp
 *~
-
-# Keep Cursor project rules optional locally; do not force-ignore if committed
-# .cursor/

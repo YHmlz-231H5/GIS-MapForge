@@ -83,7 +83,7 @@
 
 ### Electron + MapLibre 注意
 
-请勿同时通过 `<script>` 加载 `vendor/maplibre-gl.js` 与 npm `maplibre-gl`（双实例会破坏 Worker）。不要 monkey-patch `window.Blob`。在 Electron 33 上建议锁定 MapLibre **5.7.x**。详见 `.cursor/rules/maplibre-electron.mdc`。
+请勿同时通过 `<script>` 加载 `vendor/maplibre-gl.js` 与 npm `maplibre-gl`（双实例会破坏 Worker）。不要 monkey-patch `window.Blob`。在 Electron 33 上建议锁定 MapLibre **5.7.x**。
 
 ---
 
