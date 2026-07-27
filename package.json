@@ -1,0 +1,106 @@
+{
+  "name": "app-map-downloader",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Electron desktop app: download OSM / raster tiles and pack offline PMTiles or MBTiles",
+  "author": "MapDownloader",
+  "license": "MIT",
+  "main": "dist-electron/main/index.cjs",
+  "scripts": {
+    "dev:renderer": "vite",
+    "dev:main": "node scripts/build-main.cjs --watch",
+    "dev:preload": "node scripts/build-preload.cjs --watch",
+    "dev:workers": "node scripts/build-workers.cjs --watch",
+    "dev": "node scripts/dev.cjs",
+    "dev:no-gpu": "node scripts/dev.cjs -- --disable-gpu",
+    "rebuild:native": "electron-rebuild -f -w better-sqlite3",
+    "postinstall": "electron-rebuild -f -w better-sqlite3 || echo \"native rebuild skipped\"",
+    "build:renderer": "vite build --config vite.config.ts && node scripts/copy-vendor-to-dist.cjs",
+    "build:main": "node scripts/build-main.cjs",
+    "build:preload": "node scripts/build-preload.cjs",
+    "build:workers": "node scripts/build-workers.cjs",
+    "build": "npm run build:renderer && npm run build:main && npm run build:workers && npm run build:preload",
+    "electron:build": "npm run build && electron-builder",
+    "fetch:map-assets": "node scripts/fetch-map-assets.cjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@osmix/pbf": "^0.0.10",
+    "@radix-ui/react-dialog": "^1.1.4",
+    "@radix-ui/react-dropdown-menu": "^2.1.4",
+    "@radix-ui/react-progress": "^1.1.1",
+    "@radix-ui/react-slider": "^1.2.2",
+    "@radix-ui/react-switch": "^1.1.2",
+    "@radix-ui/react-tooltip": "^1.1.5",
+    "@watergis/maplibre-gl-terradraw": "^1.15.0",
+    "better-sqlite3": "^11.7.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.469.0",
+    "maplibre-gl": "^5.7.3",
+    "pmtiles": "4.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.6.0",
+    "terra-draw": "^1.32.2",
+    "terra-draw-maplibre-gl-adapter": "^1.4.1",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.2.0",
+    "@playwright/test": "^1.61.1",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5",
+    "vite-plugin-electron": "^0.29.0",
+    "vite-plugin-electron-renderer": "^0.14.6"
+  },
+  "build": {
+    "appId": "com.mapdownloader.app",
+    "productName": "Map Downloader",
+    "icon": "build/icon.png",
+    "directories": {
+      "output": "release/${version}"
+    },
+    "extraResources": [
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
+      }
+    ],
+    "files": [
+      "dist-electron/**/*",
+      "dist/**/*",
+      "vendor/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility"
+    }
+  }
+}

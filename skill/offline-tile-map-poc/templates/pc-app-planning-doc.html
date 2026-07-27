@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>项目标题 — 规划文档</title>
+<style>
+/* Default palette — override inline */
+:root { --bg: #f7f8fa; --fg: #1d1f23; --card: #fff; --accent: #2563eb; --border: #e5e7eb; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; line-height: 1.65; }
+.container { max-width: 1100px; margin: 0 auto; padding: 32px; }
+h1 { font-size: 32px; margin: 0 0 8px; }
+.subtitle { color: #6b7280; font-size: 14px; margin: 0 0 24px; }
+section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; }
+h2 { font-size: 22px; margin: 0 0 12px; }
+h3 { font-size: 17px; margin: 20px 0 8px; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+th { background: #f8f9fa; }
+code { background: #f1f3f5; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+pre { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
+pre code { background: transparent; color: inherit; padding: 0; }
+.mockup { border: 2px solid var(--border); border-radius: 12px; overflow: hidden; margin: 16px 0; }
+.mockup-bar { background: #fafbfc; border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; gap: 8px; align-items: center; }
+.mockup-bar .title { margin-left: 12px; font-size: 12px; color: #6b7280; }
+.mockup-body { display: grid; grid-template-columns: 280px 1fr 320px; min-height: 360px; }
+.mockup-pane { padding: 16px; border-right: 1px solid var(--border); }
+.mockup-pane:last-child { border-right: none; }
+.mockup-pane h5 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase; color: #6b7280; letter-spacing: 1px; }
+.btn { display: inline-block; padding: 8px 14px; border-radius: 6px; font-size: 13px; border: none; cursor: pointer; background: #2563eb; color: white; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.tag.done { background: #d1fae5; color: #047857; }
+.tag.todo { background: #fef3c7; color: #92400e; }
+.tag.req { background: #fee2e2; color: #991b1b; }
+.note { border-left: 4px solid #2563eb; background: #eff6ff; padding: 12px 16px; border-radius: 4px; margin: 12px 0; font-size: 14px; }
+.compare { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 16px 0; }
+.col { border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; background: #fafbfc; }
+.col h4 { margin-top: 0; color: #2563eb; font-size: 14px; }
+.recommended { border-color: #10b981; background: #f0fdf4; }
+.recommended h4 { color: #10b981; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>项目标题 — 规划文档</h1>
+<p class="subtitle">一句话描述这个项目的目标 + 上下文</p>
+
+<section>
+<h2>1. 项目概览</h2>
+<p>一段话说明这个项目要做什么、为什么、做出来的样子。比 Markdown 更偏 PR description。</p>
+<div class="note">
+<h4>例子：已验证可工作的基础工具（YYYY-MM-DD）</h4>
+<ul>
+  <li>工具 1 — 描述</li>
+  <li>工具 2 — 描述</li>
+</ul>
+</div>
+<p><strong>MVP 范畴</strong>: 必交付。</p>
+<p><strong>Phase 2 范畴</strong>: 后续。</p>
+</section>
+
+<section>
+<h2>2. 范畴与并发锁定</h2>
+<table>
+  <tr><th>轴</th><th>范围</th><th>状态</th></tr>
+  <tr><td>A. 下载类型</td><td>...</td><td><span class="tag done">确定</span></td></tr>
+  <tr><td>B. 交互方式</td><td>...</td><td><span class="tag done">确定</span></td></tr>
+  <tr><td>C. 并行策略</td><td>...</td><td><span class="tag done">确定</span></td></tr>
+  <tr><td>D. 技术栈</td><td><strong>未确定 — 见 §6 候选</strong></td><td><span class="tag req">需要你选</span></td></tr>
+  <tr><td>E. 输出存储</td><td>...</td><td><span class="tag done">默认</span></td></tr>
+  <tr><td>F. 联网要求</td><td>...</td><td><span class="tag done">确定</span></td></tr>
+</table>
+</section>
+
+<section>
+<h2>3. 用户画像与使用场景</h2>
+<h3>主要用户</h3>
+<ul><li>...</li></ul>
+<h3>典型 workflow</h3>
+<ol><li>...</li></ol>
+</section>
+
+<section>
+<h2>4. UI mockup</h2>
+<p>关键页面用 Tailwind-style mockup 直接画 — 不画就只是空想。</p>
+
+<div class="mockup">
+  <div class="mockup-bar">
+    <span class="title">窗口标题</span>
+  </div>
+  <div class="mockup-body">
+    <div class="mockup-pane">
+      <h5>左面板</h5>
+      <input placeholder="..." />
+      <button class="btn">操作</button>
+    </div>
+    <div class="mockup-pane">
+      <h5>中央</h5>
+    </div>
+    <div class="mockup-pane">
+      <h5>右面板</h5>
+    </div>
+  </div>
+</div>
+</section>
+
+<section>
+<h2>5. 功能列表</h2>
+<h3>P0 (必做)</h3>
+<ul><li>...</li></ul>
+<h3>P1 (建议)</h3>
+<ul><li>...</li></ul>
+<h3>P2 (后续)</h3>
+<ul><li>...</li></ul>
+</section>
+
+<section>
+<h2>6. 技术栈与候选对比</h2>
+<p>对比 4 套候选，给出推荐 + 理由。</p>
+
+<div class="compare">
+  <div class="col recommended">
+    <h4>A. 选项 1 (推荐)</h4>
+    <p><strong>★ 选这个</strong></p>
+    <p>优点: ...</p>
+    <p>缺点: ...</p>
+  </div>
+  <div class="col">
+    <h4>B. 选项 2</h4>
+    <p>优点: ...</p>
+    <p>缺点: ...</p>
+  </div>
+  <div class="col">
+    <h4>C. 选项 3</h4>
+    <p>...</p>
+  </div>
+  <div class="col">
+    <h4>D. 选项 4</h4>
+    <p>...</p>
+  </div>
+</div>
+
+<h3>monorepo 目录</h3>
+<pre><code>project-root/
+├── package.json
+├── electron-builder.yml
+├── src/
+│   ├── main/                 # Node.js backend
+│   ├── preload/              # contextBridge
+│   └── renderer/             # React UI
+└── docs/
+    └── ADR/
+</code></pre>
+</section>
+
+<section>
+<h2>7. 数据流</h2>
+<pre><code>User → UI Event → IPC → Main Process → Backend Spawn → Progress emit → IPC → UI</code></pre>
+</section>
+
+<section>
+<h2>8. 数据 / 文件结构 / 状态</h2>
+<h3>本地目录</h3>
+<pre><code>%USERPROFILE%/MyAppData/
+├── downloads/
+├── output/
+├── history.db
+└── config.json
+</code></pre>
+</section>
+
+<section>
+<h2>9. 错误处理与边界情况</h2>
+<table>
+  <tr><th>场景</th><th>处理</th></tr>
+  <tr><td>...</td><td>...</td></tr>
+</table>
+</section>
+
+<section>
+<h2>10. N 周开发路线图</h2>
+<table>
+  <tr><th>W1</th><th>W2</th><th>...</th></tr>
+  <tr><td>环境</td><td>UI shell</td><td>...</td></tr>
+  <tr><td>栈选</td><td>面板</td><td>...</td></tr>
+</table>
+</section>
+
+<section>
+<h2>11. 下一步（你该做的）</h2>
+<div class="note">
+<h4>决策</h4>
+<p>这是 pre-W1 的决策列表 — 等你回复后再 commit 栈。</p>
+<ol><li>...</li></ol>
+</div>
+</section>
+
+</div>
+</body>
+</html>

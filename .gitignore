@@ -1,0 +1,49 @@
+# Dependencies & caches
+node_modules/
+.cache/
+*.log
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+
+# Build / package outputs
+dist/
+dist-electron/
+release/
+tsconfig.tsbuildinfo
+
+# Runtime data (downloads, DB, Planetiler aux, user output)
+data/
+output/
+downloads/
+tmp-planetiler-out/
+.cache/
+
+# Large / downloadable binaries (fetch locally — see README)
+tools/*.jar
+tools/**/*.jar
+vendor/map-assets/
+
+# Tests & local scratch
+test-results/
+test-results.json
+playwright-report/
+debug/
+*.pmtiles
+*.mbtiles
+*.osm
+*.osm.pbf
+
+# Duplicate asset at repo root (canonical: src/renderer/assets/)
+/mountain-river.png
+
+# Editor / OS
+.idea/
+.vscode/
+*.swp
+*~
+
+# Keep Cursor project rules optional locally; do not force-ignore if committed
+# .cursor/

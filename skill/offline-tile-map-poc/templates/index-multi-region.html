@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>MapLibre + PMTiles · Multi-Source Demo</title>
+
+    <!-- All assets are loaded locally. No internet access required at runtime. -->
+    <link rel="stylesheet" href="./vendor/maplibre-gl.css" />
+    <script src="./vendor/maplibre-gl.js"></script>
+    <script src="./vendor/pmtiles.js"></script>
+
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, "Segoe UI", Arial, sans-serif; }
+        #map { position: absolute; inset: 0; }
+
+        #info {
+            position: absolute; top: 12px; left: 12px; z-index: 2;
+            background: rgba(255,255,255,0.94); padding: 10px 14px;
+            border-radius: 8px; font-size: 12px; line-height: 1.55;
+            box-shadow: 0 2px 6px rgba(0,0,0,.18);
+            max-width: 340px;
+        }
+        #info b { color: #1a73e8; }
+        #info code { font-size: 11px; background: #eef; padding: 1px 4px; border-radius: 3px; }
+
+        #regions {
+            position: absolute; top: 12px; right: 12px; z-index: 2;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        #regions button {
+            background: #fff; border: 1px solid #ccc;
+            border-radius: 6px; padding: 8px 14px;
+            font-size: 13px; cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,.15);
+            transition: background .15s, border-color .15s, transform .15s;
+            text-align: left; min-width: 180px;
+        }
+        #regions button:hover { background: #f5f9ff; border-color: #1a73e8; }
+        #regions button.active {
+            background: #1a73e8; color: #fff; border-color: #1a73e8;
+            transform: translateX(-2px);
+        }
+        #regions button .sub {
+            display: block; font-size: 10.5px; color: #888;
+            margin-top: 2px;
+        }
+        #regions button.active .sub { color: rgba(255,255,255,.85); }
+
+        #status {
+            position: absolute; bottom: 12px; right: 12px; z-index: 2;
+            background: rgba(0,0,0,.7); color: #fff;
+            padding: 6px 12px; border-radius: 6px;
+            font-size: 11px; font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+
+<div id="info">
+    <b>MapLibre + PMTiles · Multi-Source Demo</b><br>
+    Switch regions via the panel on the right.<br>
+    Each region loads its own local <code>.pmtiles</code> file.
+</div>
+
+<div id="regions">
+    <button data-region="firenze" class="active">
+        🇮🇹 Firenze (Italy)
+        <span class="sub">firenze.pmtiles · 6.3 MB</span>
+    </button>
+    <button data-region="australia">
+        🇦🇺 Australia (overview)
+        <span class="sub">australia.pmtiles · full OSM</span>
+    </button>
+</div>
+
+<div id="status">Loading…</div>
+
+<div id="map"></div>
+
+<script>
+/* ============================================================
+ * 1) Register PMTiles protocol ONCE — must happen before any map setup.
+ * ============================================================ */
+const protocol = new pmtiles.Protocol();
+maplibregl.addProtocol("pmtiles", protocol.tile);
+
+/* ============================================================
+ * 2) Region manifest.
+ *    Each entry: pmtiles path, view, min/maxZoom, attribution,
+ *    and a factory that returns the layer list for this region.
+ *
+ *    Add as many regions as you want — just append to REGIONS.
+ * ============================================================ */
+const FIRENZE_LAYERS = (sourceId) => ([
+    { id: `${sourceId}-bg`, type: "background", paint: {"background-color": "#f8f4f0"} },
+    { id: `${sourceId}-water`, type: "fill", source: sourceId, "source-layer": "water",
+      filter: ["==", ["geometry-type"], "Polygon"],
+      paint: {"fill-color": "#80b1d3"} },
+    { id: `${sourceId}-buildings`, type: "fill", source: sourceId, "source-layer": "buildings",
+      paint: {"fill-color": "#d9d9d9", "fill-outline-color": "#999"} },
+    { id: `${sourceId}-roads`, type: "line", source: sourceId, "source-layer": "roads",
+      paint: {"line-color": "#fc8d62", "line-width": 1.5} },
+    { id: `${sourceId}-pois`, type: "circle", source: sourceId, "source-layer": "pois",
+      paint: {"circle-color": "#ffffb3", "circle-radius": 4,
+              "circle-stroke-color": "#bdbdbd", "circle-stroke-width": 1} }
+]);
+
+const AUSTRALIA_LAYERS = (sourceId) => ([
+    { id: `${sourceId}-bg`, type: "background", paint: {"background-color": "#a4c8e8"} },
+    // Insert landuse, water, aeroway, buildings, infrastructure, transit BEFORE roads,
+    // so roads draw on top of fills. See SKILL pitfalls for layer ordering.
+    { id: `${sourceId}-roads`, type: "line", source: sourceId, "source-layer": "roads",
+      paint: {
+          "line-color": [
+              "match", ["get", "highway"],
+              "motorway",      "#e892a2", "motorway_link", "#e892a2",
+              "trunk",         "#f4a582", "trunk_link",    "#f4a582",
+              "primary",       "#fddbc7", "secondary",     "#fddbc7",
+              "tertiary",      "#fee8d3",
+              "residential",   "#ffffff",
+              "service",       "#f0f0f0",
+              "footway",       "#dddddd", "path",          "#dddddd",
+              "track",         "#d0c8b0",
+              "#ffffff"
+          ],
+          "line-width": [
+              "interpolate", ["linear"], ["zoom"],
+              2, 0.3,
+              6, [
+                  "match", ["get", "highway"],
+                  ["motorway","trunk"], 1.6,
+                  ["primary","secondary"], 1.0,
+                  ["residential","service","unclassified"], 0.6,
+                  0.3
+              ]
+          ]
+      } },
+    { id: `${sourceId}-cities`, type: "circle", source: sourceId, "source-layer": "places",
+      filter: ["==", ["get", "place"], "city"],
+      paint: {"circle-color": "#b2182b", "circle-radius": 6,
+              "circle-stroke-color": "#fff", "circle-stroke-width": 1.5} },
+    { id: `${sourceId}-towns`, type: "circle", source: sourceId, "source-layer": "places",
+      filter: ["in", ["get", "place"], ["literal", ["town","suburb","village"]]],
+      paint: {"circle-color": "#ef8a62", "circle-radius": 3,
+              "circle-stroke-color": "#fff", "circle-stroke-width": 1} }
+]);
+
+const REGIONS = {
+    firenze: {
+        pmtiles: "./firenze.pmtiles",
+        name: "Firenze",
+        view: { center: [11.2543435, 43.7672134], zoom: 13, bearing: 0, pitch: 0 },
+        minZoom: 10, maxZoom: 16,
+        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> · Protomaps sample',
+        styleLayers: FIRENZE_LAYERS
+    },
+    australia: {
+        pmtiles: "./australia.pmtiles",
+        name: "Australia",
+        view: { center: [133.0, -27.0], zoom: 3, bearing: 0, pitch: 0 },
+        minZoom: 0, maxZoom: 6,
+        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> · Geofabrik Australia extract',
+        styleLayers: AUSTRALIA_LAYERS
+    }
+};
+
+/* ============================================================
+ * 3) Style builder.
+ *    IMPORTANT: do NOT include `glyphs` or `sprite` keys — MapLibre
+ *    throws "string expected, undefined found" and rejects the whole
+ *    style. Omit them; there are no text/icon layers in this demo.
+ * ============================================================ */
+function buildStyle(regionKey) {
+    const r = REGIONS[regionKey];
+    const sourceId = `src-${regionKey}`;
+    return {
+        version: 8,
+        sources: {
+            [sourceId]: {
+                type: "vector",
+                url: `pmtiles://${r.pmtiles}`,
+                attribution: r.attribution
+            }
+        },
+        layers: r.styleLayers(sourceId)
+    };
+}
+
+/* ============================================================
+ * 4) Initial map.
+ * ============================================================ */
+let currentRegion = "firenze";
+let isSwitching = false;
+
+const map = new maplibregl.Map({
+    container: "map",
+    center: REGIONS[currentRegion].view.center,
+    zoom: REGIONS[currentRegion].view.zoom,
+    bearing: REGIONS[currentRegion].view.bearing,
+    pitch: REGIONS[currentRegion].view.pitch,
+    minZoom: REGIONS[currentRegion].minZoom,
+    maxZoom: REGIONS[currentRegion].maxZoom,
+    style: buildStyle(currentRegion)
+});
+
+map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
+map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+
+map.on("load", () => {
+    document.getElementById("status").textContent = `Loaded: ${REGIONS[currentRegion].name}`;
+});
+
+map.on("error", (e) => {
+    console.error("[map error]", e && e.error ? e.error : e);
+});
+
+/* ============================================================
+ * 5) Region switch.
+ *
+ *    Three failure modes we defend against (each took a debug session to find):
+ *
+ *    (a) styledata fires multiple times per setStyle rebuild — using `.once()` is racy.
+ *        Use `sourcedata` filtered by the new sourceId + a 2s failsafe, so even if the
+ *        pmtiles URL 404s the camera still moves.
+ *
+ *    (b) The new region's zoom range doesn't contain the previous region's range
+ *        (Firenze 10..16 → Australia 0..6). Calling setMaxZoom(6) while current minZoom
+ *        is 10 throws "maxZoom must be greater than the current minZoom" — silently
+ *        freezes the entire switch. Fix: lift maxZoom above the current minZoom BEFORE
+ *        lowering minZoom.
+ *
+ *    (c) jumpTo throws if targetZoom is outside the (already-set) bounds. Clamp.
+ * ============================================================ */
+async function switchRegion(regionKey) {
+    if (regionKey === currentRegion || isSwitching) return;
+    if (!REGIONS[regionKey]) {
+        console.warn("unknown region:", regionKey);
+        return;
+    }
+
+    isSwitching = true;
+    document.getElementById("status").textContent = `Switching to ${REGIONS[regionKey].name}…`;
+    document.querySelectorAll("#regions button").forEach(b => {
+        b.classList.toggle("active", b.dataset.region === regionKey);
+    });
+
+    const r = REGIONS[regionKey];
+    const newStyle = buildStyle(regionKey);
+    currentRegion = regionKey;
+
+    try {
+        map.setStyle(newStyle, { diff: false });
+    } catch (e) {
+        console.error('[switch] setStyle error', e);
+        isSwitching = false;
+        return;
+    }
+
+    const finalizeSwitch = (reason) => {
+        // (b) Order matters: lift maxZoom above current minZoom first.
+        try {
+            const currentMin = map.getMinZoom();
+            const safeMax = Math.max(r.maxZoom, currentMin + 1, 24); // 24 = MapLibre hard max
+            map.setMaxZoom(safeMax);
+            map.setMinZoom(r.minZoom);
+            map.setMaxZoom(r.maxZoom);
+        } catch (e) {
+            console.warn('[switch] zoom bounds error (non-fatal):', e.message);
+        }
+        // (c) Clamp target zoom to the new region's bounds.
+        const targetZoom = Math.min(Math.max(r.view.zoom, r.minZoom), r.maxZoom);
+        try {
+            map.jumpTo({
+                center: r.view.center,
+                zoom: targetZoom,
+                bearing: r.view.bearing,
+                pitch: r.view.pitch
+            });
+        } catch (e) {
+            console.warn('[switch] jumpTo error:', e.message);
+        }
+        document.getElementById("status").textContent = `Loaded: ${r.name}`;
+        isSwitching = false;
+    };
+
+    // (a) Wait for the new source's data event with a 2s failsafe.
+    const sourceId = `src-${regionKey}`;
+    let done = false;
+    const finish = (reason) => {
+        if (done) return;
+        done = true;
+        map.off("sourcedata", onSourceData);
+        clearTimeout(failsafe);
+        if (currentRegion !== regionKey) { isSwitching = false; return; }
+        finalizeSwitch(reason);
+    };
+    const onSourceData = (e) => {
+        if (e.sourceId !== sourceId) return;
+        // Accept ANY signal the source is ready — covers cached sources
+        // that may skip the metadata event entirely.
+        if (e.isSourceLoaded) finish('sourceloaded');
+    };
+    map.on("sourcedata", onSourceData);
+    const failsafe = setTimeout(() => finish('failsafe'), 2000);
+}
+
+/* ============================================================
+ * 6) Wire up buttons.
+ * ============================================================ */
+document.querySelectorAll("#regions button").forEach(btn => {
+    btn.addEventListener("click", () => switchRegion(btn.dataset.region));
+});
+
+/* Debug handles for Chrome DevTools MCP. */
+window.__map = map;
+window.__switchRegion = switchRegion;
+window.__REGIONS = REGIONS;
+</script>
+</body>
+</html>

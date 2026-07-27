@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>MapLibre + PMTiles Offline PoC</title>
+
+    <!-- All assets are loaded locally. No internet access required at runtime. -->
+    <link rel="stylesheet" href="./vendor/maplibre-gl.css" />
+    <script src="./vendor/maplibre-gl.js"></script>
+    <script src="./vendor/pmtiles.js"></script>
+
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, "Segoe UI", Arial, sans-serif; }
+        #map { position: absolute; inset: 0; }
+        #info {
+            position: absolute; top: 12px; left: 12px; z-index: 1;
+            background: rgba(255,255,255,0.92); padding: 8px 12px;
+            border-radius: 6px; font-size: 12px; line-height: 1.5;
+            box-shadow: 0 1px 4px rgba(0,0,0,.15);
+            pointer-events: none; max-width: 320px;
+        }
+        #info b { color: #1a73e8; }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <b>MapLibre + PMTiles Offline PoC</b><br>
+        Drag to pan · Scroll to zoom<br>
+        Source: <code>protomaps(vector)ODbL_firenze.pmtiles</code>
+    </div>
+    <div id="map"></div>
+
+    <script>
+        // 1) Register the PMTiles protocol with MapLibre (official API: maplibregl.addProtocol).
+        //    Required once per page load. After this call, every source url prefixed with
+        //    "pmtiles://" is routed through the pmtiles JS library, which uses HTTP Range
+        //    requests to fetch individual tiles / metadata from the local .pmtiles file.
+        const protocol = new pmtiles.Protocol();
+        maplibregl.addProtocol("pmtiles", protocol.tile);
+
+        // 2) Build the map. We inline the style JSON so the demo is a single self-contained
+        //    HTML file (plus its siblings in ./vendor/ and ./firenze.pmtiles).
+        const map = new maplibregl.Map({
+            container: "map",
+            center: [11.2543435, 43.7672134],   // Florence, Italy
+            zoom: 13,
+            minZoom: 10,
+            maxZoom: 16,
+            style: {
+                version: 8,
+                sources: {
+                    firenze: {
+                        type: "vector",
+                        url: "pmtiles://./firenze.pmtiles",
+                        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+                    }
+                },
+                layers: [
+                    { "id": "background", "type": "background", "paint": { "background-color": "#f8f4f0" } },
+                    { "id": "water",     "type": "fill",   "source": "firenze", "source-layer": "water",     "filter": ["==", ["geometry-type"], "Polygon"], "paint": { "fill-color": "#80b1d3" } },
+                    { "id": "buildings", "type": "fill",   "source": "firenze", "source-layer": "buildings", "paint": { "fill-color": "#d9d9d9", "fill-outline-color": "#999" } },
+                    { "id": "roads",     "type": "line",   "source": "firenze", "source-layer": "roads",     "paint": { "line-color": "#fc8d62", "line-width": 1.5 } },
+                    { "id": "pois",      "type": "circle", "source": "firenze", "source-layer": "pois",      "paint": { "circle-color": "#ffffb3", "circle-radius": 4, "circle-stroke-color": "#bdbdbd", "circle-stroke-width": 1 } }
+                ]
+            }
+        });
+
+        // 3) Optional UX bits — all from MapLibre stock controls, no extra dependencies.
+        map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
+        map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+
+        // Expose for debugging in DevTools console.
+        window.__map = map;
+    </script>
+</body>
+</html>
