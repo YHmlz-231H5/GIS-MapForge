@@ -5,7 +5,7 @@ import type { StyleSpecification } from 'maplibre-gl';
 let drawControl: MaplibreTerradrawControl | null = null;
 let finishBound = false;
 
-export type DrawToolMode = 'rectangle' | 'polygon' | 'select';
+export type DrawToolMode = 'rectangle' | 'square' | 'polygon' | 'select';
 
 const TD_PREFIX = 'td-';
 

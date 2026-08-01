@@ -6,6 +6,7 @@ import {
   TerraDrawRectangleMode,
   TerraDrawSelectMode,
 } from 'terra-draw';
+import { TerraDrawSquareMode } from './terraDrawSquareMode';
 
 const NODE = {
   color: '#0ea5e9',
@@ -21,6 +22,18 @@ const POLY_STYLE = {
   outlineWidth: 2,
 } as const;
 
+const BOX_SELECT_FLAGS = {
+  feature: {
+    draggable: true,
+    coordinates: {
+      midpoints: true,
+      draggable: true,
+      resizable: 'opposite' as const,
+      deletable: false,
+    },
+  },
+};
+
 export function buildDrawModeOptions() {
   return {
     polygon: new TerraDrawPolygonMode({
@@ -34,6 +47,9 @@ export function buildDrawModeOptions() {
       },
     }),
     rectangle: new TerraDrawRectangleMode({
+      styles: { ...POLY_STYLE },
+    }),
+    square: new TerraDrawSquareMode({
       styles: { ...POLY_STYLE },
     }),
     select: new TerraDrawSelectMode({
@@ -62,17 +78,8 @@ export function buildDrawModeOptions() {
             },
           },
         },
-        rectangle: {
-          feature: {
-            draggable: true,
-            coordinates: {
-              midpoints: true,
-              draggable: true,
-              resizable: 'opposite',
-              deletable: false,
-            },
-          },
-        },
+        rectangle: BOX_SELECT_FLAGS,
+        square: BOX_SELECT_FLAGS,
       },
     }),
   };

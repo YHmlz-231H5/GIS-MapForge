@@ -103,12 +103,12 @@ export function MapStyleSwitcher({ leftOffset = 12 }: { leftOffset?: number }) {
 
   return (
     <div
-      className="absolute z-10 w-[22rem] max-w-[calc(100%-1.5rem)] select-none ui-motion-x"
+      className="absolute z-10 w-[22rem] max-w-[calc(100%-1.5rem)] select-none ui-motion-x pointer-events-none"
       style={{ top: 'var(--ui-space)', transform: `translate3d(${leftOffset}px, 0, 0)` }}
     >
       <button
         onClick={openPanel}
-        className="w-full bg-white/95 backdrop-blur shadow-md border border-slate-300 rounded-lg pl-2.5 pr-2.5 py-2 text-xs flex items-center gap-2 hover:bg-white"
+        className="pointer-events-auto w-full bg-white/95 backdrop-blur shadow-md border border-slate-300 rounded-lg pl-2.5 pr-2.5 py-2 text-xs flex items-center gap-2 hover:bg-white"
         data-testid="basemap-button"
         aria-label="切换底图"
         aria-expanded={open}
@@ -131,8 +131,8 @@ export function MapStyleSwitcher({ leftOffset = 12 }: { leftOffset?: number }) {
       </button>
 
       <div
-        className={`w-full mt-1 origin-top ui-motion-dropdown ${
-          open ? 'ui-dropdown-open' : 'ui-dropdown-closed'
+        className={`absolute left-0 right-0 top-full mt-1 z-10 origin-top ui-motion-dropdown ${
+          open ? 'ui-dropdown-open pointer-events-auto' : 'ui-dropdown-closed pointer-events-none'
         }`}
         aria-hidden={!open}
       >

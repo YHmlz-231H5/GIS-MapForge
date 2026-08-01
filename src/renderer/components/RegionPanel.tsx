@@ -1,21 +1,30 @@
 import { useState, useCallback } from 'react';
-import { Download } from 'lucide-react';
+import {
+  Download,
+  RectangleHorizontal,
+  Square,
+  Pentagon,
+  Pencil,
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Region } from '../../shared/types';
 import { useAppStore } from '../store';
-import { bboxAreaKm2, estimatePbfSize, formatBytes } from '../lib/utils';
-import { squareBbox, bboxToPolygonFeature } from '../lib/regionFromDraw';
-import { activateDrawMode, clearAllDrawings } from '../lib/drawControl';
+import { bboxAreaKm2, estimatePbfSize, estimateRasterDownload, formatBytes } from '../lib/utils';
+import { activateDrawMode, type DrawToolMode } from '../lib/drawControl';
+import { DEFAULT_RASTER_UI_MAX_ZOOM } from '../../shared/raster-sources';
 
 /** Pull just the local name out of "龙华区, 深圳市, 广东省, 中国". */
 function shortName(displayName: string): string {
   return displayName.split(',')[0]?.trim() ?? displayName;
 }
 
+const DRAW_TOOL_BTN =
+  'inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded border border-sky-200 bg-white text-sky-800 hover:bg-sky-100';
+
 export function RegionPanel() {
+  const { t } = useTranslation();
   const region = useAppStore((s) => s.region);
   const setRegion = useAppStore((s) => s.setRegion);
-  const drawPreferSquare = useAppStore((s) => s.drawPreferSquare);
-  const setDrawPreferSquare = useAppStore((s) => s.setDrawPreferSquare);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Region[]>([]);
@@ -23,14 +32,8 @@ export function RegionPanel() {
   const [error, setError] = useState<string | null>(null);
   const [boundaryLoading, setBoundaryLoading] = useState(false);
 
-  /** After region set, try to find Chinese admin boundary via Photon → DataV heuristic. */
   const enhanceRegionWithBoundary = useCallback(async (r: Region): Promise<Region> => {
     if (r.source !== 'photon' && r.source !== 'nominatim') return r;
-    // Only attempt when in China (Photon sets countrycode 'CN')
-    if (!r.name.includes('中国') && !r.name.includes('CN')) {
-      // Heuristic: if name looks like an administrative unit, try anyway
-      // (Photon displayname includes country always for CN results)
-    }
     setBoundaryLoading(true);
     try {
       const adcodeRes = await window.api.guessRegionAdcode({ name: shortName(r.name), bbox: r.bbox });
@@ -41,8 +44,8 @@ export function RegionPanel() {
           boundary_geojson: adcodeRes.data.boundary,
         };
       }
-    } catch (err) {
-      // silent — user still has the bbox, just no overlay
+    } catch {
+      // silent
     } finally {
       setBoundaryLoading(false);
     }
@@ -61,7 +64,6 @@ export function RegionPanel() {
       return;
     }
     setSearchResults(r.data ?? []);
-    // Auto-pick first, then enrich with boundary
     if (r.data && r.data[0]) {
       const enriched = await enhanceRegionWithBoundary(r.data[0]);
       setRegion(enriched);
@@ -108,103 +110,67 @@ export function RegionPanel() {
     });
   };
 
+  const runDraw = (mode: DrawToolMode) => {
+    const r = activateDrawMode(mode);
+    if (!r.ok) window.alert(r.reason);
+  };
+
   const sizes = region ? estimatePbfSize(region.area_km2) : null;
+  const rasterEst = region
+    ? estimateRasterDownload(region.bbox, 0, DEFAULT_RASTER_UI_MAX_ZOOM)
+    : null;
 
   return (
     <div className="p-3 space-y-3 text-sm">
       <div>
-        <h2 className="font-semibold text-base flex items-center gap-2">
-          📍 选择区域
-        </h2>
-        <p className="text-xs text-slate-500 mt-1">
-          搜索地名 / 地图绘制 / 导入 GeoJSON / 手动编辑 bbox
-        </p>
+        <h2 className="font-semibold text-base flex items-center gap-2">📍 {t('region.title')}</h2>
+        <p className="text-xs text-slate-500 mt-1">{t('region.subtitle')}</p>
       </div>
 
       <div className="rounded border border-sky-100 bg-sky-50/80 px-2.5 py-2 space-y-1.5">
-        <div className="text-xs font-medium text-sky-900">地图绘制</div>
-        <p className="text-[11px] text-sky-800/90 leading-snug">
-          点下方按钮后在地图上绘制。画完后自动进入选择模式，可拖动蓝色节点改形状；清除会去掉绘制与选区图层。
-        </p>
-        <div className="flex flex-wrap gap-1">
+        <div className="text-xs font-medium text-sky-900">{t('region.drawTitle')}</div>
+        <p className="text-[11px] text-sky-800/90 leading-snug">{t('region.drawHint')}</p>
+        <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
-            className="px-2 py-1 text-[11px] bg-white hover:bg-sky-100 rounded border border-sky-200"
-            onClick={() => {
-              const r = activateDrawMode('rectangle');
-              if (!r.ok) window.alert(r.reason);
-            }}
+            className={DRAW_TOOL_BTN}
+            onClick={() => runDraw('rectangle')}
           >
-            矩形拉框
+            <RectangleHorizontal className="w-3.5 h-3.5 shrink-0" aria-hidden />
+            {t('region.drawRect')}
           </button>
           <button
             type="button"
-            className="px-2 py-1 text-[11px] bg-white hover:bg-sky-100 rounded border border-sky-200"
-            onClick={() => {
-              const r = activateDrawMode('polygon');
-              if (!r.ok) window.alert(r.reason);
-            }}
+            className={DRAW_TOOL_BTN}
+            onClick={() => runDraw('square')}
           >
-            多边形
+            <Square className="w-3.5 h-3.5 shrink-0" aria-hidden />
+            {t('region.drawSquare')}
           </button>
           <button
             type="button"
-            className="px-2 py-1 text-[11px] bg-white hover:bg-sky-100 rounded border border-sky-200"
-            onClick={() => {
-              const r = activateDrawMode('select');
-              if (!r.ok) window.alert(r.reason);
-            }}
+            className={DRAW_TOOL_BTN}
+            onClick={() => runDraw('polygon')}
           >
-            选择编辑
+            <Pentagon className="w-3.5 h-3.5 shrink-0" aria-hidden />
+            {t('region.drawPolygon')}
           </button>
           <button
             type="button"
-            className="px-2 py-1 text-[11px] bg-white hover:bg-rose-50 rounded border border-rose-200 text-rose-700"
-            onClick={() => {
-              const r = clearAllDrawings();
-              setRegion(null);
-              if (!r.ok) window.alert(r.reason);
-            }}
+            className={DRAW_TOOL_BTN}
+            onClick={() => runDraw('select')}
           >
-            清除绘制
+            <Pencil className="w-3.5 h-3.5 shrink-0" aria-hidden />
+            {t('region.drawSelect')}
           </button>
         </div>
-        <label className="flex items-center gap-2 text-[11px] text-sky-900 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={drawPreferSquare}
-            onChange={(e) => setDrawPreferSquare(e.target.checked)}
-          />
-          矩形完成后收成正方形（等距）
-        </label>
-        {region && (
-          <button
-            type="button"
-            className="w-full px-2 py-1 text-[11px] bg-white hover:bg-sky-100 rounded border border-sky-200"
-            onClick={() => {
-              const sq = squareBbox(region.bbox);
-              const area = bboxAreaKm2(sq);
-              setRegion({
-                ...region,
-                name: region.source === 'map-draw' ? region.name : `${region.name}（正方形）`,
-                bbox: sq,
-                area_km2: area,
-                estimated_nodes: Math.round(area * 1000),
-                source: 'map-draw',
-                boundary_geojson: bboxToPolygonFeature(sq, { square: true }),
-              });
-            }}
-          >
-            将当前选区收成正方形
-          </button>
-        )}
       </div>
 
       <div className="space-y-2">
         <div className="flex gap-1">
           <input
             className="flex-1 text-sm border border-slate-300 rounded px-2 py-1 bg-white"
-            placeholder="搜索地名 (深圳龙华)"
+            placeholder={t('region.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -214,7 +180,7 @@ export function RegionPanel() {
             disabled={searching}
             onClick={handleSearch}
           >
-            {searching ? '搜索中…' : '🔍'}
+            {searching ? t('region.searching') : '🔍'}
           </button>
         </div>
 
@@ -222,7 +188,7 @@ export function RegionPanel() {
           className="w-full px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 rounded border"
           onClick={handleJsonImport}
         >
-          📁 拖入 / 选择 GeoJSON 文件
+          📁 {t('region.pickGeoJson')}
         </button>
       </div>
 
@@ -234,7 +200,7 @@ export function RegionPanel() {
 
       {searchResults.length > 1 && (
         <div className="text-xs space-y-1">
-          <div className="text-slate-500">多个结果，挑选一个：</div>
+          <div className="text-slate-500">{t('region.multiResults')}</div>
           {searchResults.map((r, i) => (
             <button
               key={i}
@@ -256,9 +222,16 @@ export function RegionPanel() {
             <div className="font-medium text-sm">{region.name}</div>
             <div className="text-slate-500 text-[10px]">
               {region.area_km2.toFixed(1)} km² · {region.source}
-              {region.adcode && <> · adcode <span className="font-mono">{region.adcode}</span></>}
-              {boundaryLoading && <> · 🛰 加载边界…</>}
-              {Boolean(region.boundary_geojson) && !boundaryLoading && <> · 🛰 行政边界已加载</>}
+              {region.adcode && (
+                <>
+                  {' '}
+                  · adcode <span className="font-mono">{region.adcode}</span>
+                </>
+              )}
+              {boundaryLoading && <> · 🛰 {t('region.boundaryLoading')}</>}
+              {Boolean(region.boundary_geojson) && !boundaryLoading && (
+                <> · 🛰 {t('region.boundaryLoaded')}</>
+              )}
             </div>
           </div>
 
@@ -277,11 +250,33 @@ export function RegionPanel() {
             ))}
           </div>
 
-          {sizes && (
-            <div className="text-[10px] text-slate-600 space-y-0.5 border-t pt-2">
-              <div>PBF ≈ {formatBytes(sizes.pbfMB * 1024 * 1024)}</div>
-              <div>PMTiles ≈ {formatBytes(sizes.pmtilesMB * 1024 * 1024)}</div>
-              <div>OSM API tiles ≈ {sizes.tiles88}</div>
+          {(sizes || rasterEst) && (
+            <div className="text-[10px] text-slate-600 space-y-1.5 border-t pt-2">
+              {sizes && (
+                <div className="space-y-0.5">
+                  <div className="font-medium text-slate-700">{t('region.vectorEstimate')}</div>
+                  <div>PBF ≈ {formatBytes(sizes.pbfMB * 1024 * 1024)}</div>
+                  <div>PMTiles ≈ {formatBytes(sizes.pmtilesMB * 1024 * 1024)}</div>
+                  <div>{t('region.osmTiles', { count: sizes.tiles88 })}</div>
+                </div>
+              )}
+              {rasterEst && (
+                <div className="space-y-0.5">
+                  <div className="font-medium text-slate-700">
+                    {t('region.rasterEstimate', {
+                      min: rasterEst.minZoom,
+                      max: rasterEst.maxZoom,
+                    })}
+                  </div>
+                  <div>
+                    {t('region.rasterTiles', {
+                      tiles: rasterEst.tiles.toLocaleString(),
+                      bytes: formatBytes(rasterEst.bytes),
+                    })}
+                  </div>
+                  <div className="text-slate-400">{t('region.rasterHint')}</div>
+                </div>
+              )}
             </div>
           )}
 
@@ -290,7 +285,7 @@ export function RegionPanel() {
             onClick={() => useAppStore.getState().openDownloadDrawer()}
           >
             <Download className="w-4 h-4" aria-hidden />
-            下载数据
+            {t('region.download')}
           </button>
         </div>
       )}

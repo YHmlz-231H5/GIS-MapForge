@@ -59,9 +59,9 @@ interface AppState {
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
 
-  /** When true, finishing a terra-draw rectangle snaps to a geographic square. */
-  drawPreferSquare: boolean;
-  setDrawPreferSquare: (v: boolean) => void;
+  /** Full task-history dialog (opened from header). */
+  taskHistoryOpen: boolean;
+  setTaskHistoryOpen: (open: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -127,6 +127,6 @@ export const useAppStore = create<AppState>((set) => ({
   toggleLeftPanel: () => set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
   toggleRightPanel: () => set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
 
-  drawPreferSquare: false,
-  setDrawPreferSquare: (drawPreferSquare) => set({ drawPreferSquare }),
+  taskHistoryOpen: false,
+  setTaskHistoryOpen: (taskHistoryOpen) => set({ taskHistoryOpen }),
 }));

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from './store';
 import { RegionPanel } from './components/RegionPanel';
 import { MapView } from './components/MapView';
@@ -18,6 +19,7 @@ const LEFT_PANEL_W = 320;
 const RIGHT_PANEL_W = 360;
 
 export default function App() {
+  const { t } = useTranslation();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [styleStudioOpen, setStyleStudioOpen] = useState(false);
@@ -37,6 +39,8 @@ export default function App() {
   const openPmtilesPreview = useAppStore((s) => s.openPmtilesPreview);
   const rasterPreview = useAppStore((s) => s.rasterPreview);
   const openRasterPreview = useAppStore((s) => s.openRasterPreview);
+  const setTaskHistoryOpen = useAppStore((s) => s.setTaskHistoryOpen);
+  const taskCount = useAppStore((s) => s.tasks.length);
 
   useEffect(() => {
     const upsert = useAppStore.getState().upsertTask;
@@ -94,18 +98,18 @@ export default function App() {
             className="h-8 w-8 rounded-md object-cover shadow-sm ring-1 ring-slate-200/80"
             draggable={false}
           />
-          <h1 className="font-semibold">地图下载器</h1>
+          <h1 className="font-semibold">{t('app.title')}</h1>
           <span className="text-xs text-slate-400 font-mono">v{version}</span>
         </div>
         <div className="text-xs text-slate-500 flex gap-3">
           <span>
-            Java:{' '}
+            {t('app.java')}:{' '}
             <span className={javaPath ? 'text-emerald-600' : 'text-rose-600'}>
               {javaPath ? '✓' : '✗'}
             </span>
           </span>
           <span>
-            Planetiler:{' '}
+            {t('app.planetiler')}:{' '}
             <span className={planetilerJar ? 'text-emerald-600' : 'text-rose-600'}>
               {planetilerJar ? '✓' : '✗'}
             </span>
@@ -114,24 +118,33 @@ export default function App() {
             onClick={() => setStyleStudioOpen(true)}
             className="px-2 py-0.5 bg-sky-50 hover:bg-sky-100 text-sky-800 rounded text-xs"
             data-testid="style-studio-button"
-            title="矢量配图（本地 PMTiles）"
+            title={t('app.styleStudioTitle')}
           >
-            🎨 配图
+            🎨 {t('app.styleStudio')}
+          </button>
+          <button
+            onClick={() => setTaskHistoryOpen(true)}
+            className="px-2 py-0.5 bg-violet-50 hover:bg-violet-100 text-violet-800 rounded text-xs inline-flex items-center gap-1"
+            data-testid="task-history-button"
+            title={t('app.allTasksTitle')}
+          >
+            📋 {t('app.allTasks')}
+            {taskCount > 0 ? <span className="tabular-nums opacity-70">({taskCount})</span> : null}
           </button>
           <button
             onClick={() => setHelpOpen(true)}
             className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-xs"
             data-testid="help-button"
-            title="使用说明与数据流程"
+            title={t('app.helpTitle')}
           >
-            📖 说明
+            📖 {t('app.help')}
           </button>
           <button
             onClick={() => setSettingsOpen(true)}
             className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-xs"
             data-testid="settings-button"
           >
-            ⚙ 设置
+            ⚙ {t('app.settings')}
           </button>
         </div>
       </header>
@@ -149,7 +162,7 @@ export default function App() {
           open={leftPanelOpen}
           onToggle={toggleLeftPanel}
           width={LEFT_PANEL_W}
-          label="选区"
+          label={t('app.panelRegion')}
         >
           <div className="h-full overflow-y-auto thin-scroll">
             <RegionPanel />
@@ -161,7 +174,7 @@ export default function App() {
           open={rightPanelOpen}
           onToggle={toggleRightPanel}
           width={RIGHT_PANEL_W}
-          label="任务"
+          label={t('app.panelTasks')}
         >
           <TaskQueue />
         </FloatingSidePanel>

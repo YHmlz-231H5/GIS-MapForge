@@ -24,6 +24,9 @@ export function registerConfigHandlers(ipcMain: IpcMain) {
         'max_concurrent_heavy',
         'default_zoom_max',
         'default_java_heap',
+        'java_heap',
+        'maptiler_key',
+        'locale',
       ];
       for (const k of items) {
         const v = Config.get(k);

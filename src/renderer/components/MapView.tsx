@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import type { StyleSpecification } from 'maplibre-gl';
 import { MaplibreTerradrawControl } from '@watergis/maplibre-gl-terradraw';
+import { Eraser } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../store';
 import { findBasemap, type Basemap } from '../data/basemaps';
 import {
@@ -10,6 +12,7 @@ import {
   persistHealthy,
 } from '../lib/basemapHealth';
 import {
+  clearAllDrawings,
   getDrawControl,
   isDrawFinishBound,
   markDrawFinishBound,
@@ -20,7 +23,7 @@ import { buildDrawModeOptions } from '../lib/drawModeOptions';
 import { MapStyleSwitcher } from './MapStyleSwitcher';
 import { MapZoomHud } from './MapZoomHud';
 import { featureToRegion, pickDrawnPolygon } from '../lib/regionFromDraw';
-import { UI_SPACE } from '../lib/uiSpace';
+import { UI_SPACE, UI_SPACE_SM } from '../lib/uiSpace';
 
 
 /**
@@ -37,6 +40,8 @@ export function MapView({
   rightPanelOpen: boolean;
   rightPanelWidth: number;
 }) {
+  const { t } = useTranslation();
+  const setRegion = useAppStore((s) => s.setRegion);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const navHostRef = useRef<HTMLDivElement>(null);
@@ -564,6 +569,27 @@ export function MapView({
         .map-nav-host .maplibregl-ctrl {
           margin: 0 !important;
         }
+        .map-nav-host .map-clear-draw-group {
+          border-radius: 4px;
+          overflow: hidden;
+        }
+        .map-nav-host .map-clear-draw-btn {
+          width: 29px;
+          height: 29px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          border: 0;
+          border-radius: 4px;
+          background: #fff;
+          cursor: pointer;
+          color: #334155;
+        }
+        .map-nav-host .map-clear-draw-btn:hover {
+          background: #f1f5f9;
+          color: #be123c;
+        }
       `}</style>
 
       <MapStyleSwitcher leftOffset={leftOffset} />
@@ -574,13 +600,30 @@ export function MapView({
       />
       <div
         ref={navHostRef}
-        className="map-nav-host absolute z-30 pointer-events-none"
+        className="map-nav-host absolute z-30 pointer-events-none flex flex-col items-end"
         style={{
           right: navRightPad,
           bottom: UI_SPACE,
+          gap: UI_SPACE_SM,
           transition: 'right 280ms cubic-bezier(0.4, 0, 0.2, 1)',
         }}
-      />
+      >
+        <div className="maplibregl-ctrl maplibregl-ctrl-group map-clear-draw-group pointer-events-auto shadow">
+          <button
+            type="button"
+            className="map-clear-draw-btn"
+            title={t('region.drawClear')}
+            aria-label={t('region.drawClear')}
+            onClick={() => {
+              const r = clearAllDrawings();
+              setRegion(null);
+              if (!r.ok) window.alert(r.reason);
+            }}
+          >
+            <Eraser className="w-4 h-4" aria-hidden />
+          </button>
+        </div>
+      </div>
 
       {webglError && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-auto z-20">
@@ -662,7 +705,7 @@ function attachTerradrawOnce(map: maplibregl.Map) {
   if (getDrawControl()) return;
   const draw = new MaplibreTerradrawControl({
     // Native chrome is CSS-hidden; RegionPanel drives modes.
-    modes: ['polygon', 'rectangle', 'select', 'delete-selection', 'delete'],
+    modes: ['polygon', 'rectangle', 'square', 'select', 'delete-selection', 'delete'] as any,
     open: true,
     modeOptions: buildDrawModeOptions() as any,
   });
@@ -680,10 +723,10 @@ function attachTerradrawOnce(map: maplibregl.Map) {
   kick();
   setTimeout(kick, 0);
 
-  const syncRegionFromDraw = (opts?: { asSquare?: boolean; selectId?: string | number }) => {
+  const syncRegionFromDraw = () => {
     const poly = pickDrawnPolygon(draw.getFeatures() as { features?: GeoJSON.Feature[] });
     if (!poly) return;
-    useAppStore.getState().setRegion(featureToRegion(poly, { asSquare: opts?.asSquare }));
+    useAppStore.getState().setRegion(featureToRegion(poly));
   };
 
   const bindFinish = () => {
@@ -692,14 +735,7 @@ function attachTerradrawOnce(map: maplibregl.Map) {
     markDrawFinishBound();
 
     terra.on('finish', (id: string | number) => {
-      let mode = '';
-      try {
-        mode = String((terra as { getMode?: () => string }).getMode?.() ?? '');
-      } catch {
-        mode = '';
-      }
-      const asSquare = useAppStore.getState().drawPreferSquare && mode === 'rectangle';
-      syncRegionFromDraw({ asSquare });
+      syncRegionFromDraw();
 
       try {
         terra.setMode('select');
