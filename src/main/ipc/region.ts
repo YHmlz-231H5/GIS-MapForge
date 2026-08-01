@@ -4,13 +4,7 @@ import { Presets } from '../db';
 import { searchPhoton, photonToRegions } from './photon-client';
 import { fetchDataVByAdcode } from './datav-client';
 import { estimateAreaKm2 } from './bbox-utils';
-
-function ok<T = unknown>(data?: T): IpcResult<T> {
-  return { ok: true, data: data as T };
-}
-function err(message: string): IpcResult {
-  return { ok: false, error: message };
-}
+import { ok, err } from './result';
 
 /**
  * Compute outer-rect bbox from a GeoJSON FeatureCollection.

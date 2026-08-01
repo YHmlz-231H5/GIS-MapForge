@@ -1,6 +1,12 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+export {
+  bboxAreaKm2,
+  estimateRasterDownload,
+  estimateRasterTileCount,
+} from '../../shared/geo';
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -10,16 +16,6 @@ export function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
-}
-
-export function bboxAreaKm2(bbox: [number, number, number, number]): number {
-  const [, south, , north] = bbox;
-  const dLat = north - south;
-  const midLat = (north + south) / 2;
-  const dLon = bbox[2] - bbox[0];
-  const kmLat = dLat * 111;
-  const kmLon = dLon * 111 * Math.cos((midLat * Math.PI) / 180);
-  return kmLat * kmLon;
 }
 
 /** Estimate OSM PBF size for a bbox using a simple density heuristic. */
@@ -34,39 +30,4 @@ export function estimatePbfSize(area_km2: number): { pbfMB: number; pmtilesMB: n
   // OSM API tile count: 25 km² tiles (CELL=0.02°), grid covers bbox
   const tiles88 = Math.ceil((area_km2 / 25) * 1.05);
   return { pbfMB: Math.round(pbfMB * 10) / 10, pmtilesMB: Math.round(pmtilesMB * 10) / 10, tiles88 };
-}
-
-/**
- * Rough raster XYZ download size for a bbox + zoom range.
- * Assumes ~18 KB/tile average (PNG streets); imagery JPEG often larger.
- */
-export function estimateRasterDownload(
-  bbox: [number, number, number, number],
-  minZoom: number,
-  maxZoom: number,
-  bytesPerTile = 18 * 1024
-): { tiles: number; bytes: number; minZoom: number; maxZoom: number } {
-  const [w, s, e, n] = bbox;
-  const z0 = Math.max(0, Math.min(22, Math.floor(minZoom)));
-  const z1 = Math.max(z0, Math.min(22, Math.floor(maxZoom)));
-  let total = 0;
-  for (let z = z0; z <= z1; z++) {
-    const n2 = Math.pow(2, z);
-    const lon2tile = (lon: number) => Math.floor(((lon + 180) / 360) * n2);
-    const lat2tile = (lat: number) => {
-      const rad = (lat * Math.PI) / 180;
-      return Math.floor(
-        ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * n2
-      );
-    };
-    const dx = Math.abs(lon2tile(e) - lon2tile(w)) + 1;
-    const dy = Math.abs(lat2tile(s) - lat2tile(n)) + 1;
-    total += dx * dy;
-  }
-  return {
-    tiles: total,
-    bytes: total * bytesPerTile,
-    minZoom: z0,
-    maxZoom: z1,
-  };
 }

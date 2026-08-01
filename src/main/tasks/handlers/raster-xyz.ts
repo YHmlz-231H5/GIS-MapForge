@@ -2,7 +2,7 @@ import { spawn } from 'child_process';
 import { mkdir, writeFile } from 'fs/promises';
 import { join, resolve } from 'path';
 import type { HandlerFn } from './_types';
-import { resolveDownloadsDir, resolveOutputDir } from '../../paths';
+import { resolveOutputDir } from '../../paths';
 import { packDirectoryToMbtiles } from './pack-mbtiles';
 import { slugifyRegionName } from '../../../shared/slugify';
 import { previewTileForBbox, resolveRasterUrl } from '../../../shared/raster-sources';
@@ -27,7 +27,7 @@ export const execRasterDownloadXyz: HandlerFn = async (task, abort, pushLog, pus
     throw new Error('raster_source.url_template is required');
   }
 
-  const downloadsDir = resolveDownloadsDir();
+  const downloadsDir = resolveOutputDir();
   const outputDir = resolveOutputDir();
   const slug = slugifyRegionName(task.region.name, {
     bbox: task.region.bbox,

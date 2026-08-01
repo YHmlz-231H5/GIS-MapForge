@@ -5,38 +5,17 @@ const { execFile } = require('child_process');
 const { promisify } = require('util');
 import { join, dirname, resolve, normalize, extname, sep } from 'path';
 import { resolveOutputDir } from '../paths';
+import { ok, err } from './result';
 
 const execFileP = promisify(execFile);
 const {
   existsSync,
   statSync,
   mkdirSync,
-  openSync,
-  readSync,
-  closeSync,
   readdirSync,
   readFileSync,
   writeFileSync,
 } = fs;
-
-function ok<T = unknown>(data?: T): IpcResult<T> {
-  return { ok: true, data: data as T };
-}
-function err<T = never>(message: string): IpcResult<T> {
-  return { ok: false, error: message };
-}
-
-/** Allow reading existing .pmtiles files for preview. */
-function assertReadablePmtilesPath(filePath: string): string {
-  const abs = resolve(normalize(filePath));
-  if (!existsSync(abs)) throw new Error(`File not found: ${abs}`);
-  const st = statSync(abs);
-  if (!st.isFile()) throw new Error(`Not a file: ${abs}`);
-  if (!abs.toLowerCase().endsWith('.pmtiles')) {
-    throw new Error('Only .pmtiles files can be previewed');
-  }
-  return abs;
-}
 
 export function registerSystemHandlers(ipcMain: IpcMain) {
   ipcMain.handle('app:version', async (): Promise<IpcResult<any>> => {
@@ -185,23 +164,6 @@ export function registerSystemHandlers(ipcMain: IpcMain) {
   });
 
   ipcMain.handle(
-    'fs:writeTextFile',
-    async (_e, filePath: string, contents: string): Promise<IpcResult<void>> => {
-      try {
-        if (!filePath || typeof filePath !== 'string') return err('Invalid path');
-        if (typeof contents !== 'string') return err('Invalid contents');
-        if (contents.length > 32 * 1024 * 1024) return err('Contents too large');
-        const abs = resolve(normalize(filePath));
-        mkdirSync(dirname(abs), { recursive: true });
-        writeFileSync(abs, contents, 'utf8');
-        return ok();
-      } catch (e) {
-        return err((e as Error).message);
-      }
-    }
-  );
-
-  ipcMain.handle(
     'fs:writeTextFiles',
     async (
       _e,
@@ -327,38 +289,4 @@ export function registerSystemHandlers(ipcMain: IpcMain) {
     }
   });
 
-  ipcMain.handle(
-    'fs:readRange',
-    async (_e, filePath: string, offset: number, length: number): Promise<IpcResult<ArrayBuffer>> => {
-      try {
-        if (!Number.isFinite(offset) || !Number.isFinite(length) || offset < 0 || length <= 0) {
-          return err('Invalid range');
-        }
-        if (length > 16 * 1024 * 1024) return err('Range too large');
-        const abs = assertReadablePmtilesPath(filePath);
-        const size = statSync(abs).size;
-        const off = Math.floor(offset);
-        const len = Math.floor(length);
-        if (off >= size) {
-          return ok(new ArrayBuffer(0));
-        }
-        const toRead = Math.min(len, size - off);
-        const buf = Buffer.alloc(toRead);
-        const fd = openSync(abs, 'r');
-        try {
-          const bytesRead = readSync(fd, buf, 0, toRead, off);
-          // Standalone copy — avoid returning a view into Buffer's pooled ArrayBuffer.
-          const exact = new Uint8Array(bytesRead);
-          exact.set(buf.subarray(0, bytesRead));
-          const ab = new ArrayBuffer(exact.byteLength);
-          new Uint8Array(ab).set(exact);
-          return ok(ab);
-        } finally {
-          closeSync(fd);
-        }
-      } catch (e) {
-        return err((e as Error).message);
-      }
-    }
-  );
 }

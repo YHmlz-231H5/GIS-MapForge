@@ -127,7 +127,6 @@
     "kindOsm": "Overpass → OSM",
     "kindGeofabrik": "Geofabrik → PBF",
     "kindPlanetiler": "Planetiler → 矢量瓦片",
-    "kindAudit": "Audit PMTiles",
     "kindRasterXyz": "栅格 XYZ 下载",
     "kindRasterPack": "栅格打包",
     "archiveDirectory": "目录",

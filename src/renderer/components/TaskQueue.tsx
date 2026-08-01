@@ -1106,7 +1106,6 @@ function labelFor(kind: Task['kind']): string {
     'pbf-download-osm-api': 'tasks.kindOsm',
     'pbf-download-geofabrik': 'tasks.kindGeofabrik',
     'planetiler-convert': 'tasks.kindPlanetiler',
-    'pmtiles-audit': 'tasks.kindAudit',
     'raster-download-xyz': 'tasks.kindRasterXyz',
     'raster-pack-archive': 'tasks.kindRasterPack',
   };
@@ -1118,7 +1117,6 @@ function kindTone(kind: Task['kind']): string {
     'pbf-download-osm-api': 'bg-emerald-50 text-emerald-800 border border-emerald-100',
     'pbf-download-geofabrik': 'bg-teal-50 text-teal-800 border border-teal-100',
     'planetiler-convert': 'bg-sky-50 text-sky-800 border border-sky-100',
-    'pmtiles-audit': 'bg-violet-50 text-violet-800 border border-violet-100',
     'raster-download-xyz': 'bg-amber-50 text-amber-900 border border-amber-100',
     'raster-pack-archive': 'bg-orange-50 text-orange-900 border border-orange-100',
   }[kind];

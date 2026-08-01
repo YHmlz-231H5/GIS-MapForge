@@ -61,11 +61,7 @@ const api: ExposedApi = {
   pickOpenFile: (opts) => ipcRenderer.invoke('system:pickOpenFile', opts),
   listPmtiles: (dir) => ipcRenderer.invoke('fs:listPmtiles', dir),
   readTextFile: (filePath) => ipcRenderer.invoke('fs:readTextFile', filePath),
-  writeTextFile: (filePath, contents) =>
-    ipcRenderer.invoke('fs:writeTextFile', filePath, contents),
   writeTextFiles: (dir, files) => ipcRenderer.invoke('fs:writeTextFiles', dir, files),
-  readFileRange: (filePath, offset, length) =>
-    ipcRenderer.invoke('fs:readRange', filePath, offset, length),
   readRasterTileFile: (tileDir, z, x, fileName) =>
     ipcRenderer.invoke('fs:readRasterTileFile', tileDir, z, x, fileName),
   readMbtilesTile: (mbtilesPath, z, x, y) =>

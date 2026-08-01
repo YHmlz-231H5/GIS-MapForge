@@ -2,13 +2,7 @@ import type { BrowserWindow, IpcMain } from 'electron';
 import type { Task, TaskKind, IpcResult } from '../../shared/types';
 import { Tasks } from '../db';
 import { taskScheduler } from '../tasks/scheduler';
-
-function ok<T = unknown>(data?: T): IpcResult<T> {
-  return { ok: true, data: data as T };
-}
-function err(message: string): IpcResult {
-  return { ok: false, error: message };
-}
+import { ok, err } from './result';
 
 export function registerTaskHandlers(ipcMain: IpcMain, getMainWindow: () => BrowserWindow | null) {
   // Initialize the scheduler with the window getter

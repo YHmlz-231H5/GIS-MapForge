@@ -14,7 +14,6 @@ import { RasterPreviewPanel } from './components/RasterPreviewPanel';
 import { StyleStudioPanel } from './components/StyleStudioPanel';
 import appLogo from './assets/mountain-river.png';
 
-const APP_VERSION = '0.1.0';
 const LEFT_PANEL_W = 320;
 const RIGHT_PANEL_W = 360;
 
@@ -73,7 +72,7 @@ export default function App() {
           return { tasks: merged };
         });
       }
-      if (ver.ok) setVersion(ver.data ?? APP_VERSION);
+      if (ver.ok) setVersion(ver.data ?? '');
       if (java.ok && java.data) setJavaPath(java.data.path);
       if (jar.ok && jar.data) setPlanetilerJar(jar.data.path);
     };

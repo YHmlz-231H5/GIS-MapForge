@@ -4,7 +4,7 @@ import { statSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 import type { DownloadTileProgress, TaskProgress } from '../../../shared/types';
 import type { HandlerFn } from './_types';
-import { resolveDownloadsDir, resolveTileCacheDir, resolveSharedGeoCellCacheDir } from '../../paths';
+import { resolveOutputDir, resolveTileCacheDir, resolveSharedGeoCellCacheDir } from '../../paths';
 import { Tasks } from '../../db';
 import { slugifyRegionName } from '../../../shared/slugify';
 import { expandBbox, DEFAULT_BBOX_EXPAND_DEG } from '../../../shared/planetiler-options';
@@ -20,7 +20,7 @@ import { expandBbox, DEFAULT_BBOX_EXPAND_DEG } from '../../../shared/planetiler-
  * bounds — they never satisfy a later full-cell request.
  */
 export const execPbfDownloadOsmApi: HandlerFn = async (task, abort, pushLog, pushProgress) => {
-  const downloadsDir = resolveDownloadsDir();
+  const downloadsDir = resolveOutputDir();
   await mkdir(downloadsDir, { recursive: true });
 
   const slug = slugifyRegionName(task.region.name, {

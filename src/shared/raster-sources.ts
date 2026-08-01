@@ -18,7 +18,9 @@
 
  */
 
+import { estimateRasterTileCount, lat2tile, lon2tile } from './geo';
 
+export { estimateRasterTileCount };
 
 export type RasterSourceKind = 'streets' | 'imagery' | 'topo' | 'overlay';
 
@@ -607,83 +609,15 @@ export function resolveRasterUrl(
 
 
 /** Mid-zoom preview tile covering the region center (default z=10). */
-
 export function previewTileForBbox(
-
   bbox: [number, number, number, number],
-
   zoom = 10
-
 ): { z: number; x: number; y: number } {
-
   const [w, s, e, n] = bbox;
-
   const lon = (w + e) / 2;
-
   const lat = (s + n) / 2;
-
   const z = Math.max(0, Math.min(18, Math.floor(zoom)));
-
   return { z, x: lon2tile(lon, z), y: lat2tile(lat, z) };
-
-}
-
-
-
-export function estimateRasterTileCount(
-
-  bbox: [number, number, number, number],
-
-  minZoom: number,
-
-  maxZoom: number
-
-): number {
-
-  let total = 0;
-
-  const [w, s, e, n] = bbox;
-
-  for (let z = minZoom; z <= maxZoom; z++) {
-
-    const x1 = lon2tile(w, z);
-
-    const x2 = lon2tile(e, z);
-
-    const y1 = lat2tile(n, z);
-
-    const y2 = lat2tile(s, z);
-
-    const dx = Math.abs(x2 - x1) + 1;
-
-    const dy = Math.abs(y2 - y1) + 1;
-
-    total += dx * dy;
-
-  }
-
-  return total;
-
-}
-
-
-
-function lon2tile(lon: number, z: number) {
-
-  return Math.floor(((lon + 180) / 360) * Math.pow(2, z));
-
-}
-
-function lat2tile(lat: number, z: number) {
-
-  const rad = (lat * Math.PI) / 180;
-
-  return Math.floor(
-
-    ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * Math.pow(2, z)
-
-  );
-
 }
 
 

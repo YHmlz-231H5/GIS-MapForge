@@ -26,15 +26,8 @@
   },
   "dependencies": {
     "@osmix/pbf": "^0.0.10",
-    "@radix-ui/react-dialog": "^1.1.4",
-    "@radix-ui/react-dropdown-menu": "^2.1.4",
-    "@radix-ui/react-progress": "^1.1.1",
-    "@radix-ui/react-slider": "^1.2.2",
-    "@radix-ui/react-switch": "^1.1.2",
-    "@radix-ui/react-tooltip": "^1.1.5",
     "@watergis/maplibre-gl-terradraw": "^1.15.0",
     "better-sqlite3": "^11.7.0",
-    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "i18next": "^26.3.6",
     "lucide-react": "^0.469.0",
@@ -45,7 +38,6 @@
     "react-i18next": "^17.0.11",
     "tailwind-merge": "^2.6.0",
     "terra-draw": "^1.32.2",
-    "terra-draw-maplibre-gl-adapter": "^1.4.1",
     "zustand": "^5.0.2"
   },
   "devDependencies": {

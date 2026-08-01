@@ -9,7 +9,7 @@
  * promotes queued tasks to "running" as slots open up.
  */
 
-import type { BrowserWindow } from 'electron';
+import { app, type BrowserWindow } from 'electron';
 import { randomUUID } from 'crypto';
 import { join } from 'path';
 import { Tasks, Config } from '../db';
@@ -236,14 +236,8 @@ class Scheduler {
     const abort = new AbortController();
     this.running.set(task.id, { task, abort });
 
-    // Persisted log path (renderer reads via subscribeTaskLogs)
-    const logPath = join(
-      // app.getPath is required but we'll use os.homedir to avoid circular deps
-      require('os').homedir(),
-      '.map-downloader',
-      'logs',
-      `${task.id}.log`
-    );
+    // Persisted log path (aligned with app userData/logs; live lines still via pushLog)
+    const logPath = join(app.getPath('userData'), 'logs', `${task.id}.log`);
     Tasks.update(task.id, { log_path: logPath });
 
     // stdout/stderr from worker → main → renderer via 'task:log'
@@ -268,9 +262,6 @@ class Scheduler {
           break;
         case 'planetiler-convert':
           result = await execPlanetilerConvert(task, abort.signal, pushLog, pushProgress);
-          break;
-        case 'pmtiles-audit':
-          result = { output_path: task.region.name + '.pmtiles' };
           break;
         case 'raster-download-xyz':
           result = await execRasterDownloadXyz(task, abort.signal, pushLog, pushProgress);

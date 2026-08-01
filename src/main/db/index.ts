@@ -80,12 +80,6 @@ function initSchema(d: Database.Database) {
       updated_at      INTEGER NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS layer_sets (
-      name            TEXT PRIMARY KEY,
-      layers_json     TEXT NOT NULL,
-      created_at      INTEGER NOT NULL,
-      updated_at      INTEGER NOT NULL
-    );
   `);
 }
 
@@ -208,29 +202,6 @@ export const Tasks = {
   clearAll() {
     openDb().prepare('DELETE FROM tasks').run();
   },
-
-  /** Find the next queued task ready to start, if any. */
-  nextQueued(): Task | null {
-    const d = openDb();
-    const row = d
-      .prepare(`SELECT * FROM tasks WHERE status = 'queued' ORDER BY created_at ASC LIMIT 1`)
-      .get();
-    return row ? rowToTask(row) : null;
-  },
-
-  /** Mutex for heavy jobs: if any heavy task is running/queued, block. */
-  hasHeavyPending(): boolean {
-    const d = openDb();
-    const row = d
-      .prepare(
-        `SELECT 1 FROM tasks
-         WHERE task_class = 'heavy'
-           AND status IN ('queued','running')
-         LIMIT 1`
-      )
-      .get();
-    return !!row;
-  },
 };
 
 // ─── ConfigRepo ─────────────────────────────────────────────────────────
@@ -249,35 +220,6 @@ export const Config = {
       `INSERT INTO config (key, value_json, updated_at) VALUES (?, ?, ?)
        ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json, updated_at = excluded.updated_at`
     ).run(key, JSON.stringify(value), Date.now());
-  },
-};
-
-// ─── LayerSetRepo ──────────────────────────────────────────────────────
-
-export const LayerSets = {
-  save(name: string, layers: object) {
-    const d = openDb();
-    const now = Date.now();
-    d.prepare(
-      `INSERT INTO layer_sets (name, layers_json, created_at, updated_at)
-       VALUES (?, ?, ?, ?)
-       ON CONFLICT(name) DO UPDATE SET layers_json = excluded.layers_json, updated_at = excluded.updated_at`
-    ).run(name, JSON.stringify(layers), now, now);
-  },
-  get(name: string): object | null {
-    const d = openDb();
-    const row = d.prepare('SELECT layers_json FROM layer_sets WHERE name = ?').get(name) as
-      | { layers_json: string }
-      | undefined;
-    return row ? JSON.parse(row.layers_json) : null;
-  },
-  list(): Array<{ name: string; layers: object; updated_at: number }> {
-    const d = openDb();
-    return d.prepare('SELECT name, layers_json, updated_at FROM layer_sets ORDER BY updated_at DESC').all().map((r: any) => ({
-      name: r.name,
-      layers: JSON.parse(r.layers_json),
-      updated_at: r.updated_at,
-    }));
   },
 };
 

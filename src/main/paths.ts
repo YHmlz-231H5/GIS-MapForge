@@ -26,11 +26,6 @@ export function resolveOutputDir(): string {
   return join(app.getPath('userData'), 'output');
 }
 
-/** Alias — downloads (OSM / raster) share the same folder as PMTiles. */
-export function resolveDownloadsDir(): string {
-  return resolveOutputDir();
-}
-
 /**
  * Intermediate Overpass tile cache — under the same output root so users
  * never need to dig into AppData for download artifacts.

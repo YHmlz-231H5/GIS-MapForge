@@ -4,7 +4,7 @@ import { statSync, existsSync, renameSync } from 'fs';
 import { join } from 'path';
 import type { Task } from '../../../shared/types';
 import type { HandlerFn } from './_types';
-import { resolveDownloadsDir } from '../../paths';
+import { resolveOutputDir } from '../../paths';
 import { Tasks } from '../../db';
 import { slugifyRegionName } from '../../../shared/slugify';
 
@@ -29,7 +29,7 @@ export const execPbfDownloadGeofabrik: HandlerFn = async (task, abort, pushLog, 
     );
   }
 
-  const downloadsDir = resolveDownloadsDir();
+  const downloadsDir = resolveOutputDir();
   await mkdir(downloadsDir, { recursive: true });
 
   // Derive filename from URL (last path segment).

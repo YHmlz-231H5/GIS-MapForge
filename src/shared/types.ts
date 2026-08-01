@@ -46,8 +46,7 @@ export type TaskKind =
   | 'pbf-download-osm-api'
   | 'planetiler-convert'
   | 'raster-download-xyz' // Phase 2
-  | 'raster-pack-archive'
-  | 'pmtiles-audit';
+  | 'raster-pack-archive';
 
 export type TaskStatus =
   | 'queued'
@@ -248,19 +247,11 @@ export interface ExposedApi {
   >;
   /** Read a UTF-8 text file (style JSON, etc.). */
   readTextFile(filePath: string): Promise<IpcResult<string>>;
-  /** Write a UTF-8 text file (creates parent dirs). */
-  writeTextFile(filePath: string, contents: string): Promise<IpcResult<void>>;
   /** Write multiple UTF-8 files under a directory (creates dirs). */
   writeTextFiles(
     dir: string,
     files: Array<{ relativePath: string; contents: string }>
   ): Promise<IpcResult<{ dir: string; written: string[] }>>;
-  /** Random-access read for local PMTiles preview (returns ArrayBuffer). */
-  readFileRange(
-    filePath: string,
-    offset: number,
-    length: number
-  ): Promise<IpcResult<ArrayBuffer>>;
   /** Read one raster tile file under a z/x/y directory. */
   readRasterTileFile(
     tileDir: string,
