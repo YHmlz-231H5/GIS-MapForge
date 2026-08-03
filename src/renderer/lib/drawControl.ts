@@ -1,5 +1,6 @@
 import type { MaplibreTerradrawControl } from '@watergis/maplibre-gl-terradraw';
 import type { StyleSpecification } from 'maplibre-gl';
+import { useAppStore } from '../store';
 
 /** Shared draw control — registered by MapView, used by RegionPanel. */
 let drawControl: MaplibreTerradrawControl | null = null;
@@ -78,6 +79,24 @@ export function activateDrawMode(mode: DrawToolMode): { ok: boolean; reason?: st
     if (!terra) return { ok: false, reason: '绘制引擎未就绪' };
     if (!terra.enabled) terra.start();
     terra.setMode(mode);
+    useAppStore.getState().setActiveDrawTool(mode);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, reason: (e as Error).message || String(e) };
+  }
+}
+
+export function idleDrawMode(): { ok: boolean; reason?: string } {
+  if (!drawControl) return { ok: false, reason: '地图绘制尚未就绪' };
+  try {
+    const terra = drawControl.getTerraDrawInstance();
+    if (!terra) return { ok: false, reason: '绘制引擎未就绪' };
+    try {
+      terra.setMode('default');
+    } catch {
+      /* */
+    }
+    useAppStore.getState().setActiveDrawTool(null);
     return { ok: true };
   } catch (e) {
     return { ok: false, reason: (e as Error).message || String(e) };
@@ -124,6 +143,7 @@ export function clearAllDrawings(): { ok: boolean; reason?: string } {
     } catch {
       /* */
     }
+    useAppStore.getState().setActiveDrawTool(null);
     return { ok: true };
   } catch (e) {
     return { ok: false, reason: (e as Error).message || String(e) };

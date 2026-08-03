@@ -62,8 +62,8 @@ async function startViteAndElectron() {
   // Wait for vite to announce ready port (parsed from stdout) — minimum 2 s.
   await new Promise((r) => setTimeout(r, 3000));
 
-  // Vite default port is 5173. Detect dynamically via vite config (5173 hardcoded).
-  const RENDERER_URL = process.env.ELECTRON_RENDERER_URL || 'http://localhost:5173';
+  // Vite default port is 6284 (see vite.config.ts server.port).
+  const RENDERER_URL = process.env.ELECTRON_RENDERER_URL || 'http://localhost:6284';
 
   console.log(`[dev] Launching electron with ELECTRON_RENDERER_URL=${RENDERER_URL}`);
   const electronArgs = ['.'];

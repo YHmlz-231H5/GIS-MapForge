@@ -42,7 +42,7 @@
     "title": "Select region",
     "subtitle": "Search / draw on map / import GeoJSON / edit bbox",
     "drawTitle": "Draw on map",
-    "drawHint": "Click a tool icon, then draw on the map. The square tool stays square while dragging; after drawing you can drag vertices. Clear is above the zoom controls (bottom-right).",
+    "drawHint": "Click a tool, then draw on the map. Editing is not enabled automatically — click Edit to change vertices. Clear is above the zoom controls (bottom-right).",
     "drawRect": "Rectangle",
     "drawSquare": "Square",
     "drawPolygon": "Polygon",

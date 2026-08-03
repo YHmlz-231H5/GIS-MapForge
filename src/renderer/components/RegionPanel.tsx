@@ -19,12 +19,17 @@ function shortName(displayName: string): string {
 }
 
 const DRAW_TOOL_BTN =
-  'inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded border border-sky-200 bg-white text-sky-800 hover:bg-sky-100';
+  'inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded border transition-colors';
+const DRAW_TOOL_IDLE =
+  'border-sky-200 bg-white text-sky-800 hover:bg-sky-100';
+const DRAW_TOOL_ACTIVE =
+  'border-sky-600 bg-sky-600 text-white shadow-sm hover:bg-sky-600';
 
 export function RegionPanel() {
   const { t } = useTranslation();
   const region = useAppStore((s) => s.region);
   const setRegion = useAppStore((s) => s.setRegion);
+  const activeDrawTool = useAppStore((s) => s.activeDrawTool);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Region[]>([]);
@@ -115,6 +120,9 @@ export function RegionPanel() {
     if (!r.ok) window.alert(r.reason);
   };
 
+  const toolClass = (mode: DrawToolMode) =>
+    `${DRAW_TOOL_BTN} ${activeDrawTool === mode ? DRAW_TOOL_ACTIVE : DRAW_TOOL_IDLE}`;
+
   const sizes = region ? estimatePbfSize(region.area_km2) : null;
   const rasterEst = region
     ? estimateRasterDownload(region.bbox, 0, DEFAULT_RASTER_UI_MAX_ZOOM)
@@ -133,7 +141,8 @@ export function RegionPanel() {
         <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
-            className={DRAW_TOOL_BTN}
+            className={toolClass('rectangle')}
+            aria-pressed={activeDrawTool === 'rectangle'}
             onClick={() => runDraw('rectangle')}
           >
             <RectangleHorizontal className="w-3.5 h-3.5 shrink-0" aria-hidden />
@@ -141,7 +150,8 @@ export function RegionPanel() {
           </button>
           <button
             type="button"
-            className={DRAW_TOOL_BTN}
+            className={toolClass('square')}
+            aria-pressed={activeDrawTool === 'square'}
             onClick={() => runDraw('square')}
           >
             <Square className="w-3.5 h-3.5 shrink-0" aria-hidden />
@@ -149,7 +159,8 @@ export function RegionPanel() {
           </button>
           <button
             type="button"
-            className={DRAW_TOOL_BTN}
+            className={toolClass('polygon')}
+            aria-pressed={activeDrawTool === 'polygon'}
             onClick={() => runDraw('polygon')}
           >
             <Pentagon className="w-3.5 h-3.5 shrink-0" aria-hidden />
@@ -157,7 +168,8 @@ export function RegionPanel() {
           </button>
           <button
             type="button"
-            className={DRAW_TOOL_BTN}
+            className={toolClass('select')}
+            aria-pressed={activeDrawTool === 'select'}
             onClick={() => runDraw('select')}
           >
             <Pencil className="w-3.5 h-3.5 shrink-0" aria-hidden />

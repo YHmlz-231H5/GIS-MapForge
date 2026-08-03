@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Region, Task } from '../shared/types';
+import type { DrawToolMode } from './lib/drawControl';
 
 interface AppState {
   region: Region | null;
@@ -58,6 +59,10 @@ interface AppState {
   setRightPanelOpen: (open: boolean) => void;
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
+
+  /** Currently armed map-draw tool (null = idle / default). */
+  activeDrawTool: DrawToolMode | null;
+  setActiveDrawTool: (mode: DrawToolMode | null) => void;
 
   /** Full task-history dialog (opened from header). */
   taskHistoryOpen: boolean;
@@ -126,6 +131,9 @@ export const useAppStore = create<AppState>((set) => ({
   setRightPanelOpen: (rightPanelOpen) => set({ rightPanelOpen }),
   toggleLeftPanel: () => set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
   toggleRightPanel: () => set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
+
+  activeDrawTool: null,
+  setActiveDrawTool: (activeDrawTool) => set({ activeDrawTool }),
 
   taskHistoryOpen: false,
   setTaskHistoryOpen: (taskHistoryOpen) => set({ taskHistoryOpen }),

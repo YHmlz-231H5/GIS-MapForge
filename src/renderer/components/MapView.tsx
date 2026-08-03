@@ -734,17 +734,14 @@ function attachTerradrawOnce(map: maplibregl.Map) {
     if (!terra || isDrawFinishBound()) return;
     markDrawFinishBound();
 
-    terra.on('finish', (id: string | number) => {
+    terra.on('finish', () => {
       syncRegionFromDraw();
-
       try {
-        terra.setMode('select');
-        if (id != null && typeof (terra as { selectFeature?: (x: string | number) => void }).selectFeature === 'function') {
-          (terra as { selectFeature: (x: string | number) => void }).selectFeature(id);
-        }
+        terra.setMode('default');
       } catch {
         /* */
       }
+      useAppStore.getState().setActiveDrawTool(null);
     });
 
     terra.on('change', () => {

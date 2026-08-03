@@ -1,5 +1,7 @@
 # Map Downloader
 
+[English](README.en.md) | 中文
+
 面向桌面的 **地图数据下载与离线瓦片打包工具**。在地图上选定区域后，可下载 OpenStreetMap 矢量数据或 XYZ 栅格瓦片，并在本机用 Planetiler 生成标准 **PMTiles / MBTiles**，支持应用内预览与样式工作室。
 
 > 运行时需要网络（底图、地名搜索、数据下载）。产物（PMTiles 等）可拷贝到其他离线地图应用中使用。
@@ -38,7 +40,7 @@
 
 ### 其他
 
-- 设置：输出目录、Java 堆、MapTiler Key（底图）、并发等
+- 设置：输出目录、Java 堆、MapTiler Key（底图）、界面语言等
 - 内置使用说明面板
 - Windows / macOS / Linux 打包（electron-builder：NSIS / portable / DMG / AppImage 等）
 
@@ -49,7 +51,7 @@
 | 层级 | 技术 |
 |------|------|
 | 桌面壳 | **Electron 33** |
-| UI | **React 18** · **TypeScript** · **Vite 6** · **Tailwind CSS** · Radix UI · Zustand · Lucide |
+| UI | **React 18** · **TypeScript** · **Vite 6** · **Tailwind CSS** · Zustand · Lucide |
 | 地图 | **MapLibre GL JS 5.7.x** · **pmtiles** · Terra Draw / `@watergis/maplibre-gl-terradraw` |
 | 主进程 | Node · **better-sqlite3**（任务持久化）· Worker（Overpass / 栅格下载） |
 | 矢量切片 | **Planetiler**（外部 JAR + JDK 21+）· `@osmix/pbf`（XML→PBF 等） |
@@ -83,7 +85,7 @@
 
 ### Electron + MapLibre 注意
 
-请勿同时通过 `<script>` 加载 `vendor/maplibre-gl.js` 与 npm `maplibre-gl`（双实例会破坏 Worker）。不要 monkey-patch `window.Blob`。在 Electron 33 上建议锁定 MapLibre **5.7.x**。
+MapLibre 运行时以 npm 包为准，`vendor/` 不再内置 `maplibre-gl.js`；请勿通过 `<script>` 引入第二份 MapLibre（双实例会破坏 Worker）。不要 monkey-patch `window.Blob`。在 Electron 33 上建议锁定 MapLibre **5.7.x**。
 
 ---
 
@@ -198,6 +200,7 @@ npm run electron:build
 | `dist/`、`dist-electron/`、`release/` | 构建产物 |
 | `tools/*.jar` | Planetiler 等大型 JAR |
 | `vendor/map-assets/` | 字体与 sprite（`npm run fetch:map-assets`） |
+| `docs/` | 内部开发文档 / 审核记录（不公开） |
 
 小体积 `vendor/suppress-csp-warning.js`（及可选遗留静态资源）可随仓库提供；MapLibre 运行时以 **npm 包** 为准。
 

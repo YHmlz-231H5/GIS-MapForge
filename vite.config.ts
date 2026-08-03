@@ -31,6 +31,10 @@ const CSP_PROD =
 
 export default defineConfig(({ command }) => ({
   base: './',
+  server: {
+    port: 6284,
+    strictPort: true,
+  },
   resolve: {
     alias: {
       '@': path.join(__dirname, 'src/renderer'),
