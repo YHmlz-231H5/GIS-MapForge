@@ -60,7 +60,7 @@
   },
   "build": {
     "appId": "com.mapdownloader.app",
-    "productName": "Map Downloader",
+    "productName": "MapForge",
     "icon": "build/icon.png",
     "directories": {
       "output": "release/${version}"

@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Map Downloader",
+    "title": "MapForge",
     "styleStudio": "Style",
     "styleStudioTitle": "Vector style studio (local PMTiles)",
     "allTasks": "All",
@@ -11,7 +11,21 @@
     "panelRegion": "Region",
     "panelTasks": "Tasks",
     "java": "Java",
-    "planetiler": "Planetiler"
+    "planetiler": "Planetiler",
+    "logoPreview": "View app icon"
+  },
+  "menu": {
+    "file": "File",
+    "view": "View",
+    "help": "Help",
+    "openOutput": "Open Output Folder",
+    "settings": "Settings…",
+    "quit": "Exit",
+    "toggleRegion": "Toggle Region Panel",
+    "toggleTasks": "Toggle Tasks Panel",
+    "styleStudio": "Style Studio…",
+    "allTasks": "All Tasks…",
+    "helpGuide": "User Guide…"
   },
   "settings": {
     "title": "Settings",
@@ -102,6 +116,14 @@
     "retryFailedTiles": "Retry failed tiles",
     "openFolder": "Open folder",
     "delete": "Delete",
+    "rename": "Rename",
+    "renameTitle": "Rename task",
+    "renameHint": "Also renames output files/folders on disk and updates stored paths. Safe for later pack/convert — avoid renaming while a pack job using this file is running.",
+    "renameLabel": "New name",
+    "renameConfirm": "Save",
+    "renaming": "Renaming…",
+    "renameEmpty": "Name cannot be empty",
+    "renameFailed": "Rename failed: {{error}}",
     "packVector": "Pack vector tiles",
     "packRaster": "Pack raster",
     "preview": "Preview",

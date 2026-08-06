@@ -35,6 +35,7 @@ const api: ExposedApi = {
   cancelTask: (taskId) => ipcRenderer.invoke('task:cancel', taskId),
   resumeTask: (taskId) => ipcRenderer.invoke('task:resume', taskId),
   deleteTask: (taskId, opts) => ipcRenderer.invoke('task:delete', taskId, opts),
+  renameTask: (taskId, newName) => ipcRenderer.invoke('task:rename', taskId, newName),
   clearCompletedTasks: () => ipcRenderer.invoke('task:clear'),
   clearAllTasks: () => ipcRenderer.invoke('task:clearAll'),
 
@@ -68,6 +69,8 @@ const api: ExposedApi = {
     ipcRenderer.invoke('mbtiles:getTile', mbtilesPath, z, x, y),
 
   version: () => ipcRenderer.invoke('app:version'),
+  platform: process.platform,
+  quit: () => ipcRenderer.invoke('app:quit'),
 };
 
 contextBridge.exposeInMainWorld('api', api);

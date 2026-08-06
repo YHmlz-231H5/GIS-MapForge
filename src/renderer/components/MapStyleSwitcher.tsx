@@ -218,7 +218,7 @@ export function MapStyleSwitcher({ leftOffset = 12 }: { leftOffset?: number }) {
 function ChevronDown({ open }: { open: boolean }) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center w-7 h-7 rounded-md text-slate-500 bg-slate-100/80 ui-motion-transform ${
+      className={`inline-flex shrink-0 items-center justify-center w-7 h-7 rounded-md text-slate-500 ui-motion-transform ${
         open ? 'rotate-180' : 'rotate-0'
       }`}
       aria-hidden

@@ -51,7 +51,7 @@ export function HelpGuidePanel({ open, onClose }: { open: boolean; onClose: () =
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+      className="absolute inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
@@ -77,7 +77,7 @@ export function HelpGuidePanel({ open, onClose }: { open: boolean; onClose: () =
           {/* Positioning */}
           <Section title="这是什么？">
             <p className="text-xs text-slate-600 leading-relaxed">
-              地图下载器用于在<strong>联网</strong>条件下，选定区域后下载 OpenStreetMap 矢量数据，
+              MapForge 用于在<strong>联网</strong>条件下，选定区域后下载 OpenStreetMap 矢量数据，
               并在本机用 Planetiler 生成 <code className="text-[11px] bg-slate-100 px-1 rounded">.pmtiles</code>{' '}
               离线瓦片包。底图预览、区域搜索、数据下载都需要网络；生成的 PMTiles 可在其他离线地图应用中使用。
             </p>

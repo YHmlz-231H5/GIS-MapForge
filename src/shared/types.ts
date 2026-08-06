@@ -212,6 +212,8 @@ export interface ExposedApi {
     taskId: string,
     opts?: { deleteFiles?: boolean }
   ): Promise<IpcResult<{ deletedPaths?: string[]; fileErrors?: string[] }>>;
+  /** Rename a completed download task (display name + on-disk artifacts). */
+  renameTask(taskId: string, newName: string): Promise<IpcResult<Task>>;
   clearCompletedTasks(): Promise<IpcResult<void>>;
   clearAllTasks(): Promise<IpcResult<void>>;
 
@@ -269,6 +271,10 @@ export interface ExposedApi {
 
   // Misc
   version(): Promise<IpcResult<string>>;
+  /** Node process.platform (for title-bar layout). */
+  platform: NodeJS.Platform;
+  /** Quit the app (title-bar File → Exit). */
+  quit(): Promise<IpcResult<void>>;
 }
 
 declare global {

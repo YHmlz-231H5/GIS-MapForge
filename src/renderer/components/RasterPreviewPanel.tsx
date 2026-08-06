@@ -178,7 +178,7 @@ export function RasterPreviewPanel({
     : target.tileDir?.replace(/\\/g, '/').split('/').pop() ?? '栅格预览';
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div
         className="bg-white w-full max-w-5xl h-[min(88vh,780px)] rounded-lg shadow-xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}

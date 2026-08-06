@@ -459,7 +459,7 @@ export function StyleStudioPanel({ open, onClose }: { open: boolean; onClose: ()
   const visibility = layout.visibility !== 'none';
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 flex flex-col" role="dialog" aria-label="配图">
+    <div className="absolute inset-0 z-50 bg-slate-900/40 flex flex-col" role="dialog" aria-label="配图">
       <div className="flex-1 m-2 md:m-3 bg-white rounded-lg shadow-2xl flex flex-col overflow-hidden min-h-0">
         {/* Top bar */}
         <div className="px-3 py-2 border-b flex flex-wrap items-center gap-2 shrink-0">

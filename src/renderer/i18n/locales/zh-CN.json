@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "地图下载器",
+    "title": "MapForge",
     "styleStudio": "配图",
     "styleStudioTitle": "矢量配图（本地 PMTiles）",
     "allTasks": "全部",
@@ -11,7 +11,21 @@
     "panelRegion": "选区",
     "panelTasks": "任务",
     "java": "Java",
-    "planetiler": "Planetiler"
+    "planetiler": "Planetiler",
+    "logoPreview": "查看应用图标"
+  },
+  "menu": {
+    "file": "文件",
+    "view": "视图",
+    "help": "帮助",
+    "openOutput": "打开输出目录",
+    "settings": "设置…",
+    "quit": "退出",
+    "toggleRegion": "切换选区面板",
+    "toggleTasks": "切换任务面板",
+    "styleStudio": "配图…",
+    "allTasks": "全部任务…",
+    "helpGuide": "使用说明…"
   },
   "settings": {
     "title": "设置",
@@ -102,6 +116,14 @@
     "retryFailedTiles": "重试失败格",
     "openFolder": "打开文件夹",
     "delete": "删除",
+    "rename": "改名",
+    "renameTitle": "修改任务名称",
+    "renameHint": "将同步重命名磁盘上的输出文件/目录，并更新路径记录；不影响之后的切片打包（请勿在有进行中的打包任务时改名）。",
+    "renameLabel": "新名称",
+    "renameConfirm": "保存",
+    "renaming": "改名中…",
+    "renameEmpty": "名称不能为空",
+    "renameFailed": "改名失败: {{error}}",
     "packVector": "矢量数据切片打包",
     "packRaster": "栅格数据打包",
     "preview": "预览",

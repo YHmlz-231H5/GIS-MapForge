@@ -18,6 +18,9 @@ export function TaskQueue() {
   const [logLines, setLogLines] = useState<TaskLogLine[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<Task | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [renaming, setRenaming] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [packTarget, setPackTarget] = useState<Task | null>(null);
   const [packBusy, setPackBusy] = useState(false);
@@ -72,6 +75,39 @@ export function TaskQueue() {
       await refreshTasks();
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const openRename = (task: Task) => {
+    setRenameTarget(task);
+    setRenameValue(task.region.name);
+  };
+
+  const confirmRename = async () => {
+    if (!renameTarget) return;
+    const name = renameValue.trim();
+    if (!name) {
+      alert(t('tasks.renameEmpty'));
+      return;
+    }
+    setRenaming(true);
+    try {
+      const r = await window.api.renameTask(renameTarget.id, name);
+      if (!r.ok) {
+        alert(t('tasks.renameFailed', { error: r.error ?? 'unknown' }));
+        return;
+      }
+      if (r.data) {
+        useAppStore.getState().upsertTask(r.data);
+        const pending = useAppStore.getState().pendingConvertTask;
+        if (pending?.id === r.data.id) {
+          useAppStore.getState().openPmtilesCuration(r.data);
+        }
+      }
+      setRenameTarget(null);
+      await refreshTasks();
+    } finally {
+      setRenaming(false);
     }
   };
 
@@ -219,6 +255,7 @@ export function TaskQueue() {
     onCancel: () => cancelTask(t.id),
     onResume: () => resumeTask(t.id),
     onRemove: () => setDeleteTarget(t),
+    onRename: () => openRename(t),
     onShowLog: () => setSelectedLogTask(t.id),
     onConvert: () => convertToPmtiles(t),
     onOpenFolder: () => openOutput(t),
@@ -287,7 +324,7 @@ export function TaskQueue() {
 
         {packTarget &&
           createPortal(
-            <div className="fixed inset-0 z-[210] bg-black/40 flex items-center justify-center p-3">
+            <div className="fixed inset-x-0 bottom-0 z-[210] bg-black/40 flex items-center justify-center p-3 top-[var(--app-chrome-height,0px)]">
               <div className="bg-white w-full max-w-sm rounded-lg shadow-xl p-4 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -362,6 +399,19 @@ export function TaskQueue() {
           document.body
         )}
 
+      {renameTarget &&
+        createPortal(
+          <RenameTaskDialog
+            task={renameTarget}
+            value={renameValue}
+            busy={renaming}
+            onChange={setRenameValue}
+            onCancel={() => !renaming && setRenameTarget(null)}
+            onConfirm={confirmRename}
+          />,
+          document.body
+        )}
+
       {historyOpen &&
         createPortal(
           <TaskHistoryDialog
@@ -374,6 +424,7 @@ export function TaskQueue() {
               onCancel: () => cancelTask(t.id),
               onResume: () => resumeTask(t.id),
               onRemove: () => setDeleteTarget(t),
+              onRename: () => openRename(t),
               onConvert: () => convertToPmtiles(t),
               onOpenFolder: () => openOutput(t),
               onPreview: () => {
@@ -422,7 +473,7 @@ function DeleteTaskDialog({
   const paths = summarizeDeletePaths(task);
   return (
     <div
-      className="fixed inset-0 z-[210] bg-black/40 flex items-center justify-center p-4"
+      className="fixed inset-x-0 bottom-0 z-[210] bg-black/40 flex items-center justify-center p-4 top-[var(--app-chrome-height,0px)]"
       onClick={onCancel}
     >
       <div
@@ -482,6 +533,79 @@ function DeleteTaskDialog({
   );
 }
 
+function RenameTaskDialog({
+  task,
+  value,
+  busy,
+  onChange,
+  onCancel,
+  onConfirm,
+}: {
+  task: Task;
+  value: string;
+  busy: boolean;
+  onChange: (v: string) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div
+      className="fixed inset-x-0 bottom-0 z-[210] bg-black/40 flex items-center justify-center p-4 top-[var(--app-chrome-height,0px)]"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl w-full max-w-md p-4 space-y-3"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-labelledby="rename-task-title"
+      >
+        <h3 id="rename-task-title" className="text-sm font-semibold text-slate-900">
+          {t('tasks.renameTitle')}
+        </h3>
+        <p className="text-[11px] text-slate-500 leading-relaxed">{t('tasks.renameHint')}</p>
+        <label className="block space-y-1">
+          <span className="text-[11px] text-slate-600">{t('tasks.renameLabel')}</span>
+          <input
+            className="w-full text-sm border border-slate-300 rounded px-2 py-1.5 bg-white"
+            value={value}
+            disabled={busy}
+            autoFocus
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onConfirm();
+              if (e.key === 'Escape') onCancel();
+            }}
+          />
+        </label>
+        {task.output_path ? (
+          <p className="text-[10px] font-mono text-slate-500 break-all" title={task.output_path}>
+            {task.output_path}
+          </p>
+        ) : null}
+        <div className="flex justify-end gap-2 pt-1">
+          <button
+            type="button"
+            disabled={busy}
+            className="text-xs px-3 py-1.5 rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+            onClick={onCancel}
+          >
+            {t('tasks.cancel')}
+          </button>
+          <button
+            type="button"
+            disabled={busy || !value.trim()}
+            className="text-xs px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-700 text-white font-medium disabled:opacity-50"
+            onClick={onConfirm}
+          >
+            {busy ? t('tasks.renaming') : t('tasks.renameConfirm')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TaskHistoryDialog({
   tasks,
   onClose,
@@ -531,7 +655,7 @@ function TaskHistoryDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[200] bg-slate-900/40 flex flex-col"
+      className="fixed inset-x-0 bottom-0 z-[200] bg-slate-900/40 flex flex-col top-[var(--app-chrome-height,0px)]"
       onClick={onClose}
       role="dialog"
       aria-labelledby="task-history-title"
@@ -778,6 +902,7 @@ type TaskActionHandlers = {
   onCancel: () => void;
   onResume: () => void;
   onRemove: () => void;
+  onRename?: () => void;
   onConvert: () => void;
   onOpenFolder: () => void;
   onPreview: () => void;
@@ -820,6 +945,11 @@ function taskActionFlags(task: Task) {
     (task.kind === 'pbf-download-osm-api' || task.kind === 'pbf-download-geofabrik') &&
     task.status === 'done' &&
     !hasTileHoles;
+  const canRename =
+    task.status === 'done' &&
+    (task.kind === 'pbf-download-osm-api' ||
+      task.kind === 'pbf-download-geofabrik' ||
+      task.kind === 'raster-download-xyz');
   const canDelete =
     task.status === 'done' ||
     task.status === 'failed' ||
@@ -836,6 +966,7 @@ function taskActionFlags(task: Task) {
     canPreviewPmtiles,
     canPreviewRaster,
     canConvert,
+    canRename,
     canDelete,
   };
 }
@@ -849,6 +980,7 @@ function TaskActionButtons({
   onCancel,
   onResume,
   onRemove,
+  onRename,
   onConvert,
   onOpenFolder,
   onPreview,
@@ -899,6 +1031,14 @@ function TaskActionButtons({
           {f.hasTileHoles ? t('tasks.retryFailedTiles') : t('tasks.resume')}
         </button>
       )}
+      {f.canRename && onRename ? (
+        <button
+          className="text-[10px] px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-200"
+          onClick={onRename}
+        >
+          {t('tasks.rename')}
+        </button>
+      ) : null}
       <button
         className="text-[10px] px-1.5 py-0.5 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded border border-sky-200"
         onClick={onOpenFolder}
@@ -956,6 +1096,7 @@ function TaskCard({
   onCancel,
   onResume,
   onRemove,
+  onRename,
   onShowLog,
   onConvert,
   onOpenFolder,
@@ -967,6 +1108,7 @@ function TaskCard({
   onCancel: () => void;
   onResume: () => void;
   onRemove: () => void;
+  onRename?: () => void;
   onShowLog: () => void;
   onConvert: () => void;
   onOpenFolder: () => void;
@@ -1060,6 +1202,7 @@ function TaskCard({
         onCancel={onCancel}
         onResume={onResume}
         onRemove={onRemove}
+        onRename={onRename}
         onShowLog={onShowLog}
         onConvert={onConvert}
         onOpenFolder={onOpenFolder}

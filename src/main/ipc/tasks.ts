@@ -80,6 +80,25 @@ export function registerTaskHandlers(ipcMain: IpcMain, getMainWindow: () => Brow
     }
   );
 
+  ipcMain.handle(
+    'task:rename',
+    async (_e, taskId: string, newName: string): Promise<IpcResult<Task>> => {
+      try {
+        const { renameCompletedDownloadTask } = await import('../tasks/rename-task');
+        const r = renameCompletedDownloadTask(taskId, newName);
+        const win = getMainWindow();
+        win?.webContents.send('task:update', r.task);
+        for (const id of r.updatedDependentIds) {
+          const dep = Tasks.get(id);
+          if (dep) win?.webContents.send('task:update', dep);
+        }
+        return ok(r.task);
+      } catch (e) {
+        return err((e as Error).message);
+      }
+    }
+  );
+
   ipcMain.handle('task:clear', async (): Promise<IpcResult<any>> => {
     try {
       Tasks.clearCompleted();

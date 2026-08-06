@@ -46,7 +46,7 @@ export function buildStyleExportReadme(opts: {
   const { styleFileName, pmtilesHint } = opts;
   return `# 离线矢量样式开发指南
 
-本目录由「地图下载器 · 配图」导出，用于在 **MapLibre GL JS**（或兼容引擎）中加载本地矢量瓦片。
+本目录由「MapForge · 配图」导出，用于在 **MapLibre GL JS**（或兼容引擎）中加载本地矢量瓦片。
 
 ## 目录约定
 

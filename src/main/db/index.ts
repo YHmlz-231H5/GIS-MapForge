@@ -163,6 +163,26 @@ export const Tasks = {
       fields.push('metadata_json = @metadataJson');
       values.metadataJson = JSON.stringify(patch.metadata);
     }
+    if (patch.region !== undefined) {
+      fields.push('region_name = @regionName');
+      fields.push('bbox_west = @bboxW');
+      fields.push('bbox_south = @bboxS');
+      fields.push('bbox_east = @bboxE');
+      fields.push('bbox_north = @bboxN');
+      fields.push('area_km2 = @areaKm2');
+      fields.push('source = @source');
+      values.regionName = patch.region.name;
+      values.bboxW = patch.region.bbox[0];
+      values.bboxS = patch.region.bbox[1];
+      values.bboxE = patch.region.bbox[2];
+      values.bboxN = patch.region.bbox[3];
+      values.areaKm2 = patch.region.area_km2;
+      values.source = patch.region.source;
+    }
+    if (patch.options !== undefined) {
+      fields.push('options_json = @optionsJson');
+      values.optionsJson = JSON.stringify(patch.options);
+    }
 
     if (!fields.length) return;
     d.prepare(`UPDATE tasks SET ${fields.join(', ')} WHERE id = @id`).run(values);

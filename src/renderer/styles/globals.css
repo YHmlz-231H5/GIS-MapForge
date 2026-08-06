@@ -54,6 +54,16 @@
   html, body, #root { @apply h-full bg-background text-foreground; }
 }
 
+/* Custom title bar (Electron titleBarStyle: hidden + titleBarOverlay) */
+.titlebar-drag {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+.titlebar-no-drag {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
 /* MapLibre CSS is imported from npm in main.tsx */
 .maplibregl-map {
   width: 100%;

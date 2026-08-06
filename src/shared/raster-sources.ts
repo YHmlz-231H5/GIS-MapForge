@@ -212,7 +212,35 @@ export const RASTER_DOWNLOAD_SOURCES: RasterTileSource[] = [
 
     bulkOk: true,
 
-    notes: '影像常用源（MOBAC/SAS 同类）；请保留 Esri 署名，勿超大规模爬取',
+    notes: '影像常用源（MOBAC/SAS 同类）；无注记，可另下「Esri Imagery Labels」叠层；请保留 Esri 署名，勿超大规模爬取',
+
+  },
+
+  {
+
+    id: 'esri-imagery-labels',
+
+    label: 'Esri Imagery Labels',
+
+    kind: 'overlay',
+
+    urlTemplate:
+
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+
+    maxzoom: 19,
+
+    suggestMaxZoom: suggestZ(19),
+
+    format: 'png',
+
+    attribution: 'Esri, HERE, Garmin, © OpenStreetMap contributors, and the GIS user community',
+
+    regions: ['any'],
+
+    bulkOk: true,
+
+    notes: 'Esri 官方影像注记层（边界/地名，透明底）；叠在 World Imagery 上使用，需单独下载',
 
   },
 

@@ -22,6 +22,11 @@ export function registerSystemHandlers(ipcMain: IpcMain) {
     return ok(app.getVersion());
   });
 
+  ipcMain.handle('app:quit', async (): Promise<IpcResult<void>> => {
+    app.quit();
+    return ok(undefined);
+  });
+
   ipcMain.handle('system:detectJava', async (): Promise<IpcResult<{ path: string; version: string } | null>> => {
     const candidates = [
       'java',

@@ -214,7 +214,7 @@ export function DownloadTypeDrawer() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-3">
+    <div className="absolute inset-0 bg-black/40 z-50 flex items-center justify-center p-3">
       <div className="bg-white w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-lg shadow-xl thin-scroll">
         <div className="p-4 border-b flex justify-between items-center sticky top-0 bg-white z-10">
           <div>

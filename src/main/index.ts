@@ -1,6 +1,9 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron';
 import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
+
+/** Must match renderer title bar height / titleBarOverlay.height */
+const TITLE_BAR_HEIGHT = 36;
 
 // IPC handlers will be registered here
 import { registerRegionHandlers } from './ipc/region';
@@ -61,14 +64,28 @@ function resolveAppIcon(): string | undefined {
 }
 
 function createWindow() {
+  const isMac = process.platform === 'darwin';
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 1100,
     minHeight: 720,
-    title: '地图下载器',
+    title: 'MapForge',
     icon: resolveAppIcon(),
     show: false,
+    // VS Code–style: one row for brand/menu + native window controls.
+    // Renderer draws the bar; Windows/Linux keep OS caption buttons via overlay.
+    titleBarStyle: isMac ? 'hiddenInset' : 'hidden',
+    ...(isMac
+      ? { trafficLightPosition: { x: 12, y: Math.round((TITLE_BAR_HEIGHT - 12) / 2) } }
+      : {
+          titleBarOverlay: {
+            color: '#ffffff',
+            symbolColor: '#334155',
+            height: TITLE_BAR_HEIGHT,
+          },
+        }),
+    autoHideMenuBar: true,
     // High-DPI scaling for crisp tiles on retina/HiDPI displays.
     // Match MapView placeholder — if WebGL/canvas hasn't painted yet, don't flash dark slate.
     backgroundColor: '#e6ecf2',
@@ -119,6 +136,22 @@ app.whenReady().then(() => {
   const userDir = app.getPath('userData');
   mkdirSync(join(userDir, 'output'), { recursive: true });
   mkdirSync(join(userDir, 'logs'), { recursive: true });
+
+  // Custom HTML menu lives in the title bar — drop the native menubar row on Win/Linux.
+  // macOS keeps a minimal app menu so Cmd+Q / system expectations still work.
+  if (process.platform === 'darwin') {
+    Menu.setApplicationMenu(
+      Menu.buildFromTemplate([
+        {
+          role: 'appMenu',
+        },
+        { role: 'editMenu' },
+        { role: 'windowMenu' },
+      ])
+    );
+  } else {
+    Menu.setApplicationMenu(null);
+  }
 
   registerPmtilesRangeHandler();
   registerRegionHandlers(ipcMain);

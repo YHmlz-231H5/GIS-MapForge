@@ -72,7 +72,7 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex justify-end">
+    <div className="absolute inset-0 bg-black/40 z-50 flex justify-end">
       <div className="bg-white w-full max-w-md h-full overflow-y-auto shadow-xl">
         <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white">
           <h2 className="text-lg font-semibold">⚙ {t('settings.title')}</h2>
