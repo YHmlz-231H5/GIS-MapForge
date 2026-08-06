@@ -37,6 +37,7 @@ const api: ExposedApi = {
   deleteTask: (taskId, opts) => ipcRenderer.invoke('task:delete', taskId, opts),
   renameTask: (taskId, newName) => ipcRenderer.invoke('task:rename', taskId, newName),
   clearCompletedTasks: () => ipcRenderer.invoke('task:clear'),
+  archiveCompletedTasks: () => ipcRenderer.invoke('task:archiveCompleted'),
   clearAllTasks: () => ipcRenderer.invoke('task:clearAll'),
 
   subscribeTaskLogs: (_taskId, cb) => {

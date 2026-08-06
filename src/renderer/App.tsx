@@ -42,7 +42,7 @@ export default function App() {
   const rasterPreview = useAppStore((s) => s.rasterPreview);
   const openRasterPreview = useAppStore((s) => s.openRasterPreview);
   const setTaskHistoryOpen = useAppStore((s) => s.setTaskHistoryOpen);
-  const taskCount = useAppStore((s) => s.tasks.length);
+  const taskCount = useAppStore((s) => s.tasks.filter((task) => !task.archived).length);
 
   useEffect(() => {
     const upsert = useAppStore.getState().upsertTask;

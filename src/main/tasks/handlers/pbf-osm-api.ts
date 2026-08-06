@@ -174,12 +174,19 @@ export const execPbfDownloadOsmApi: HandlerFn = async (task, abort, pushLog, pus
         if (typeof tileIndex === 'number' && tiles[tileIndex] && tileStatus) {
           tiles[tileIndex] = { ...tiles[tileIndex], status: tileStatus };
         }
-        const ratio = total > 0 ? Math.min(1, done / total) : 0;
+        // Prefer live tile statuses so resume/retry never jumps to index/total.
+        const doneFromTiles = tiles.length
+          ? tiles.filter((t) => t.status === 'done').length
+          : done;
+        const denom = tiles.length || total || 1;
+        const ratio = Math.min(1, doneFromTiles / denom);
         emitProgress({
           ratio,
-          phase: label ? `${done}/${total} ${label}` : `${done}/${total}`,
+          phase: label
+            ? `${doneFromTiles}/${denom} ${label}`
+            : `${doneFromTiles}/${denom}`,
         });
-        pushLog('out', `[progress] ${done}/${total} ${label ?? ''}`);
+        pushLog('out', `[progress] ${doneFromTiles}/${denom} ${label ?? ''}`);
       } else if (msg.kind === 'log') {
         console.log('[pbf-osm-api]', msg.line);
         pushLog(msg.stream === 'err' ? 'err' : 'out', msg.line);

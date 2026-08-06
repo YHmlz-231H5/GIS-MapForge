@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import type { Task, TaskLogLine, TaskStatus } from '../../shared/types';
 import { useAppStore } from '../store';
 import i18n, { formatLocalizedTime } from '../i18n';
+import { OverlayScrollArea } from './OverlayScrollArea';
 
 const SIDEBAR_TASK_LIMIT = 12;
 const HISTORY_PAGE_SIZE = 12;
@@ -24,6 +25,11 @@ export function TaskQueue() {
   const [refreshing, setRefreshing] = useState(false);
   const [packTarget, setPackTarget] = useState<Task | null>(null);
   const [packBusy, setPackBusy] = useState(false);
+
+  const sidebarTasks = useMemo(
+    () => tasks.filter((task) => !task.archived),
+    [tasks]
+  );
 
   useEffect(() => {
     const off = (window as any).api?.subscribeTaskLogs?.('*', (line: TaskLogLine) => {
@@ -46,8 +52,8 @@ export function TaskQueue() {
     }
   };
 
-  const clearCompleted = async () => {
-    await window.api.clearCompletedTasks();
+  const archiveCompleted = async () => {
+    await window.api.archiveCompletedTasks();
     await refreshTasks();
   };
 
@@ -273,7 +279,7 @@ export function TaskQueue() {
 
   return (
     <div className="flex flex-col h-full min-h-0 text-sm">
-      <div className="flex-1 min-h-0 overflow-y-auto thin-scroll p-3 space-y-2">
+      <OverlayScrollArea contentClassName="p-3 space-y-2">
         <div className="flex items-center justify-between gap-1">
           <div className="flex items-center gap-1.5 min-w-0">
             <h2 className="font-semibold text-base">📋 {t('tasks.title')}</h2>
@@ -289,8 +295,12 @@ export function TaskQueue() {
             </button>
           </div>
           <div className="flex gap-1 shrink-0">
-            <button className="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded border" onClick={clearCompleted}>
-              {t('tasks.clearCompleted')}
+            <button
+              className="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded border"
+              onClick={archiveCompleted}
+              title={t('tasks.archiveCompletedHint')}
+            >
+              {t('tasks.archiveCompleted')}
             </button>
             <button
               className="text-xs px-2 py-1 bg-red-50 hover:bg-red-100 rounded border border-red-200 text-red-700"
@@ -302,70 +312,25 @@ export function TaskQueue() {
           </div>
         </div>
 
-        {tasks.length === 0 && (
+        {sidebarTasks.length === 0 && (
           <div className="text-xs text-slate-400 py-8 text-center">{t('tasks.empty')}</div>
         )}
 
         <div className="space-y-2">
-          {tasks.slice(0, SIDEBAR_TASK_LIMIT).map((task) => (
+          {sidebarTasks.slice(0, SIDEBAR_TASK_LIMIT).map((task) => (
             <TaskCard key={task.id} {...taskCardProps(task)} />
           ))}
         </div>
 
-        {tasks.length > SIDEBAR_TASK_LIMIT && (
+        {sidebarTasks.length > SIDEBAR_TASK_LIMIT && (
           <button
             type="button"
             className="w-full text-[11px] py-1.5 rounded border border-dashed border-slate-300 text-slate-600 hover:bg-slate-50 hover:border-slate-400"
             onClick={() => setHistoryOpen(true)}
           >
-            {t('tasks.moreOpenAll', { count: tasks.length - SIDEBAR_TASK_LIMIT })}
+            {t('tasks.moreOpenAll', { count: sidebarTasks.length - SIDEBAR_TASK_LIMIT })}
           </button>
         )}
-
-        {packTarget &&
-          createPortal(
-            <div className="fixed inset-x-0 bottom-0 z-[210] bg-black/40 flex items-center justify-center p-3 top-[var(--app-chrome-height,0px)]">
-              <div className="bg-white w-full max-w-sm rounded-lg shadow-xl p-4 space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-semibold">{t('tasks.packRasterTitle')}</h3>
-                    <p className="text-[11px] text-slate-500 truncate mt-0.5">{packTarget.region.name}</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="text-slate-500 hover:text-slate-800"
-                    onClick={() => setPackTarget(null)}
-                    disabled={packBusy}
-                  >
-                    ✕
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-600 leading-snug">{t('tasks.packRasterHint')}</p>
-                <div className="flex flex-col gap-2">
-                  <button
-                    type="button"
-                    disabled={packBusy}
-                    className="text-left px-3 py-2.5 rounded-lg border-2 border-slate-200 hover:border-amber-500 hover:bg-amber-50 disabled:opacity-50"
-                    onClick={() => packRaster(packTarget, 'mbtiles')}
-                  >
-                    <div className="text-sm font-semibold">MBTiles</div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">{t('tasks.mbtilesHint')}</div>
-                  </button>
-                  <button
-                    type="button"
-                    disabled={packBusy}
-                    className="text-left px-3 py-2.5 rounded-lg border-2 border-slate-200 hover:border-violet-500 hover:bg-violet-50 disabled:opacity-50"
-                    onClick={() => packRaster(packTarget, 'pmtiles')}
-                  >
-                    <div className="text-sm font-semibold">PMTiles</div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">{t('tasks.pmtilesHint')}</div>
-                  </button>
-                </div>
-                {packBusy && <p className="text-[11px] text-slate-500">{t('tasks.packSubmitting')}</p>}
-              </div>
-            </div>,
-            document.body
-          )}
 
         {selectedLogTask && (
           <div className="mt-3 border rounded p-2 bg-slate-900 text-slate-100 text-[10px] font-mono max-h-48 overflow-auto">
@@ -385,7 +350,52 @@ export function TaskQueue() {
               ))}
           </div>
         )}
-      </div>
+      </OverlayScrollArea>
+
+      {packTarget &&
+        createPortal(
+          <div className="fixed inset-x-0 bottom-0 z-[210] bg-black/40 flex items-center justify-center p-3 top-[var(--app-chrome-height,0px)]">
+            <div className="bg-white w-full max-w-sm rounded-lg shadow-xl p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold">{t('tasks.packRasterTitle')}</h3>
+                  <p className="text-[11px] text-slate-500 truncate mt-0.5">{packTarget.region.name}</p>
+                </div>
+                <button
+                  type="button"
+                  className="text-slate-500 hover:text-slate-800"
+                  onClick={() => setPackTarget(null)}
+                  disabled={packBusy}
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-600 leading-snug">{t('tasks.packRasterHint')}</p>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  disabled={packBusy}
+                  className="text-left px-3 py-2.5 rounded-lg border-2 border-slate-200 hover:border-amber-500 hover:bg-amber-50 disabled:opacity-50"
+                  onClick={() => packRaster(packTarget, 'mbtiles')}
+                >
+                  <div className="text-sm font-semibold">MBTiles</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">{t('tasks.mbtilesHint')}</div>
+                </button>
+                <button
+                  type="button"
+                  disabled={packBusy}
+                  className="text-left px-3 py-2.5 rounded-lg border-2 border-slate-200 hover:border-violet-500 hover:bg-violet-50 disabled:opacity-50"
+                  onClick={() => packRaster(packTarget, 'pmtiles')}
+                >
+                  <div className="text-sm font-semibold">PMTiles</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">{t('tasks.pmtilesHint')}</div>
+                </button>
+              </div>
+              {packBusy && <p className="text-[11px] text-slate-500">{t('tasks.packSubmitting')}</p>}
+            </div>
+          </div>,
+          document.body
+        )}
 
       {deleteTarget &&
         createPortal(
@@ -618,13 +628,14 @@ function TaskHistoryDialog({
   actionsFor: (t: Task) => Omit<TaskActionHandlers, 'onShowLog'>;
 }) {
   const { t } = useTranslation();
-  type StatusFilter = 'all' | TaskStatus;
+  type StatusFilter = 'all' | TaskStatus | 'archived';
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
 
   const filtered = useMemo(() => {
     if (statusFilter === 'all') return tasks;
+    if (statusFilter === 'archived') return tasks.filter((task) => Boolean(task.archived));
     return tasks.filter((task) => task.status === statusFilter);
   }, [tasks, statusFilter]);
 
@@ -651,6 +662,7 @@ function TaskHistoryDialog({
     { id: 'failed', label: t('tasks.filterFailed') },
     { id: 'killed', label: t('tasks.filterKilled') },
     { id: 'cancelled', label: t('tasks.filterCancelled') },
+    { id: 'archived', label: t('tasks.filterArchived') },
   ];
 
   return (
@@ -738,7 +750,6 @@ function TaskHistoryDialog({
                   <tbody>
                     {pageItems.map((task) => {
                       const pct = Math.round((task.progress?.ratio ?? 0) * 100);
-                      const phase = task.progress?.phase ?? '—';
                       const zoom = zoomRangeFor(task);
                       const startTs = task.started_at ?? task.created_at;
                       const archive = labelForArchive(task);
@@ -750,6 +761,13 @@ function TaskHistoryDialog({
                           <td className="px-2 py-2 max-w-[200px]">
                             <div className="font-medium truncate" title={task.region.name}>
                               {task.region.name}
+                            </div>
+                            <div className="flex flex-wrap gap-1 mt-0.5">
+                              {task.archived ? (
+                                <span className="inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                                  {t('tasks.archivedBadge')}
+                                </span>
+                              ) : null}
                             </div>
                             {task.error && task.status !== 'done' ? (
                               <div className="text-[10px] text-rose-600 truncate mt-0.5" title={task.error}>
@@ -784,10 +802,9 @@ function TaskHistoryDialog({
                             <StatusBadge status={task.status} />
                           </td>
                           <td className="px-2 py-2">
-                            <div className="font-mono text-[10px] text-slate-700 truncate" title={phase}>
-                              {phase}
+                            <div className="text-[11px] text-slate-700 tabular-nums font-medium">
+                              {pct}%
                             </div>
-                            <div className="text-[10px] text-slate-500 tabular-nums">{pct}%</div>
                           </td>
                           <td className="px-2 py-2">
                             <TaskActionButtons

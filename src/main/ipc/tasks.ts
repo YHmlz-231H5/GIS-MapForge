@@ -101,7 +101,17 @@ export function registerTaskHandlers(ipcMain: IpcMain, getMainWindow: () => Brow
 
   ipcMain.handle('task:clear', async (): Promise<IpcResult<any>> => {
     try {
-      Tasks.clearCompleted();
+      // Legacy channel: “clear completed” now archives (history keeps rows).
+      Tasks.archiveCompleted();
+      return ok();
+    } catch (e) {
+      return err((e as Error).message);
+    }
+  });
+
+  ipcMain.handle('task:archiveCompleted', async (): Promise<IpcResult<any>> => {
+    try {
+      Tasks.archiveCompleted();
       return ok();
     } catch (e) {
       return err((e as Error).message);

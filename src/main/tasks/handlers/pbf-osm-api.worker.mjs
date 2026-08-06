@@ -294,72 +294,101 @@ async function main() {
     process.exit(1);
   }
 
-  let ok = 0;
-  let fail = 0;
+  /** Progress = successful cells / total (never use loop index). */
+  const doneCount = () => statuses.filter((s) => s === 'done').length;
+
   let reusedShared = 0;
   let reusedLocal = 0;
   let downloaded = 0;
+  const MAX_ROUNDS = 3;
 
-  for (let i = 0; i < cells.length; i++) {
-    const cell = cells[i];
-    const localPath = join(tileDir, `tile_${cell.key}.osm`);
-    const sharedPath = sharedCache ? join(sharedCache, `${cell.key}.osm`) : '';
-    const labelBase = `${cell.w},${cell.s}→${cell.e},${cell.n}${cell.partial ? ' (partial)' : ''}`;
+  for (let round = 1; round <= MAX_ROUNDS; round++) {
+    let roundFail = 0;
+    let roundTries = 0;
 
-    try {
-      const hit = ensureLocalFromShared(localPath, sharedPath);
-      if (hit === 'local') {
-        reusedLocal++;
-        ok++;
+    for (let i = 0; i < cells.length; i++) {
+      if (statuses[i] === 'done') continue;
+
+      roundTries++;
+      const cell = cells[i];
+      const localPath = join(tileDir, `tile_${cell.key}.osm`);
+      const sharedPath = sharedCache ? join(sharedCache, `${cell.key}.osm`) : '';
+      const labelBase = `${cell.w},${cell.s}→${cell.e},${cell.n}${cell.partial ? ' (partial)' : ''}`;
+
+      try {
+        const hit = ensureLocalFromShared(localPath, sharedPath);
+        if (hit === 'local') {
+          reusedLocal++;
+          send({
+            kind: 'log',
+            stream: 'out',
+            line: `tile ${i + 1}/${total} skip (task-local) ${cell.key}`,
+          });
+        } else if (hit === 'shared') {
+          reusedShared++;
+          send({
+            kind: 'log',
+            stream: 'out',
+            line: `tile ${i + 1}/${total} reuse (shared geo-cell) ${cell.key}`,
+          });
+        } else {
+          await downloadToPaths(cell.w, cell.s, cell.e, cell.n, localPath, sharedPath, i + 1);
+          writeMeta(sharedCache, cell);
+          downloaded++;
+          send({
+            kind: 'log',
+            stream: 'out',
+            line: `tile ${i + 1}/${total} downloaded ${cell.key}${cell.partial ? ' partial' : ''}`,
+          });
+        }
+        statuses[i] = 'done';
         send({
-          kind: 'log',
-          stream: 'out',
-          line: `tile ${i + 1}/${total} skip (task-local) ${cell.key}`,
+          kind: 'progress',
+          done: doneCount(),
+          total,
+          label: labelBase,
+          tileIndex: i,
+          tileStatus: 'done',
         });
-      } else if (hit === 'shared') {
-        reusedShared++;
-        ok++;
+      } catch (err) {
+        roundFail++;
+        statuses[i] = 'failed';
         send({
           kind: 'log',
-          stream: 'out',
-          line: `tile ${i + 1}/${total} reuse (shared geo-cell) ${cell.key}`,
+          stream: 'err',
+          line: `tile ${i + 1} failed all 3 retries: ${err.message}`,
         });
-      } else {
-        await downloadToPaths(cell.w, cell.s, cell.e, cell.n, localPath, sharedPath, i + 1);
-        writeMeta(sharedCache, cell);
-        downloaded++;
-        ok++;
         send({
-          kind: 'log',
-          stream: 'out',
-          line: `tile ${i + 1}/${total} downloaded ${cell.key}${cell.partial ? ' partial' : ''}`,
+          kind: 'progress',
+          done: doneCount(),
+          total,
+          label: `failed ${cell.w},${cell.s}`,
+          tileIndex: i,
+          tileStatus: 'failed',
         });
       }
-      send({
-        kind: 'progress',
-        done: i + 1,
-        total,
-        label: labelBase,
-        tileIndex: i,
-        tileStatus: 'done',
-      });
-    } catch (err) {
-      fail++;
+    }
+
+    const okNow = doneCount();
+    const failNow = total - okNow;
+    send({
+      kind: 'log',
+      stream: 'out',
+      line: `round ${round}/${MAX_ROUNDS}: ok=${okNow}/${total} fail=${failNow} (tried ${roundTries}, failed ${roundFail})`,
+    });
+
+    if (failNow === 0) break;
+    if (round < MAX_ROUNDS) {
       send({
         kind: 'log',
-        stream: 'err',
-        line: `tile ${i + 1} failed all 3 retries: ${err.message}`,
-      });
-      send({
-        kind: 'progress',
-        done: i + 1,
-        total,
-        label: `failed ${cell.w},${cell.s}`,
-        tileIndex: i,
-        tileStatus: 'failed',
+        stream: 'out',
+        line: `auto-retry: ${failNow} cells → round ${round + 1}/${MAX_ROUNDS}`,
       });
     }
   }
+
+  const ok = doneCount();
+  const fail = total - ok;
 
   send({
     kind: 'log',
@@ -376,11 +405,11 @@ async function main() {
     send({
       kind: 'log',
       stream: 'err',
-      line: `fatal: ${fail}/${total} tiles failed — aborting merge. Click「继续」to retry failed cells only.`,
+      line: `fatal: ${fail}/${total} tiles still failed after ${MAX_ROUNDS} rounds — aborting merge. Click「继续」to retry failed cells only.`,
     });
     send({
       kind: 'progress',
-      done: ok + fail,
+      done: ok,
       total,
       label: `incomplete ${fail} failed`,
     });

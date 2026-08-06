@@ -56,7 +56,8 @@ function initSchema(d: Database.Database) {
       log_path        TEXT,
       error           TEXT,
       metadata_json   TEXT,
-      created_at      INTEGER NOT NULL
+      created_at      INTEGER NOT NULL,
+      archived        INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE INDEX IF NOT EXISTS idx_tasks_status   ON tasks(status);
@@ -81,6 +82,12 @@ function initSchema(d: Database.Database) {
     );
 
   `);
+
+  // Migrate DBs created before `archived` existed.
+  const cols = d.prepare(`PRAGMA table_info(tasks)`).all() as Array<{ name: string }>;
+  if (!cols.some((c) => c.name === 'archived')) {
+    d.exec(`ALTER TABLE tasks ADD COLUMN archived INTEGER NOT NULL DEFAULT 0`);
+  }
 }
 
 // ─── TaskRepository ────────────────────────────────────────────────────
@@ -94,13 +101,13 @@ export const Tasks = {
         region_name, bbox_west, bbox_south, bbox_east, bbox_north, area_km2, source,
         options_json, progress_json,
         started_at, ended_at, output_path, log_path, error, metadata_json,
-        created_at
+        created_at, archived
       ) VALUES (
         @id, @kind, @taskClass, @status,
         @regionName, @bboxW, @bboxS, @bboxE, @bboxN, @areaKm2, @source,
         @optionsJson, @progressJson,
         @startedAt, @endedAt, @outputPath, @logPath, @error, @metadataJson,
-        @createdAt
+        @createdAt, @archived
       )`
     ).run({
       id: task.id,
@@ -123,6 +130,7 @@ export const Tasks = {
       error: task.error,
       metadataJson: JSON.stringify(task.metadata ?? {}),
       createdAt: task.created_at,
+      archived: task.archived ? 1 : 0,
     });
   },
 
@@ -183,6 +191,10 @@ export const Tasks = {
       fields.push('options_json = @optionsJson');
       values.optionsJson = JSON.stringify(patch.options);
     }
+    if (patch.archived !== undefined) {
+      fields.push('archived = @archived');
+      values.archived = patch.archived ? 1 : 0;
+    }
 
     if (!fields.length) return;
     d.prepare(`UPDATE tasks SET ${fields.join(', ')} WHERE id = @id`).run(values);
@@ -216,6 +228,16 @@ export const Tasks = {
   clearCompleted() {
     openDb()
       .prepare(`DELETE FROM tasks WHERE status IN ('done','failed','killed','cancelled')`)
+      .run();
+  },
+
+  /** Hide finished tasks from the sidebar list; keep them in history. */
+  archiveCompleted() {
+    openDb()
+      .prepare(
+        `UPDATE tasks SET archived = 1
+         WHERE archived = 0 AND status IN ('done','failed','killed','cancelled')`
+      )
       .run();
   },
 
@@ -289,5 +311,6 @@ function rowToTask(row: any): Task {
     error: row.error,
     metadata: row.metadata_json ? JSON.parse(row.metadata_json) : null,
     created_at: row.created_at,
+    archived: Boolean(row.archived),
   };
 }

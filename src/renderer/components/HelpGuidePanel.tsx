@@ -237,12 +237,127 @@ export function HelpGuidePanel({ open, onClose }: { open: boolean; onClose: () =
                 <strong>栅格地图</strong>（8 源，含卫星影像与街道栅格，不再按国内/国外筛选）。
               </li>
               <li>
-                「输出目录」同时用于 <code className="bg-slate-100 px-1 rounded">.osm</code> 下载与{' '}
+                「输出目录」同时用于矢量下载、栅格瓦片与{' '}
                 <code className="bg-slate-100 px-1 rounded">.pmtiles</code>；留空则使用{' '}
                 <code className="bg-slate-100 px-1 rounded text-[10px]">userData/output/</code>。
+                目录里各文件/文件夹含义见下方「输出目录里都有什么」。
               </li>
               <li>下载进行中，地图上会显示分块网格：红色待下、绿色完成、橙色失败。</li>
             </ul>
+          </Section>
+
+          <Section title="输出目录里都有什么">
+            <p className="text-xs text-slate-600 leading-relaxed">
+              以下路径均相对于<strong>设置中的输出目录</strong>（例如{' '}
+              <code className="bg-slate-100 px-1 rounded text-[10px]">…/download</code>
+              ）。文件名里的短哈希（如 <code className="bg-slate-100 px-1 rounded">0708c89b</code>
+              ）来自任务 ID，用来区分同名区域的多次下载。
+            </p>
+
+            <div className="mt-3 space-y-3 text-xs text-slate-600">
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 space-y-2">
+                <div className="font-medium text-slate-800">矢量 · Overpass（默认）</div>
+                <ul className="list-disc list-inside space-y-1.5 leading-relaxed">
+                  <li>
+                    <code className="bg-white px-1 rounded">区域名-短ID.osm</code>
+                    ：最终成果，合并后的 OSM XML，后续「生成矢量瓦片」主要用它。
+                  </li>
+                  <li>
+                    <code className="bg-white px-1 rounded">.tile-cache/geo-cells/</code>
+                    ：<strong>跨任务共享</strong>的地理格子缓存。选区被切成约 0.02° 的小矩形；每格一对{' '}
+                    <code className="bg-white px-1 rounded">c_西_南_东_北.osm</code> +{' '}
+                    <code className="bg-white px-1 rounded">.json</code>
+                    （bbox / 是否边格 / 时间）。重叠区域再次下载时可复用，少打网。
+                  </li>
+                  <li>
+                    <code className="bg-white px-1 rounded">.tile-cache/区域名-短ID/</code>
+                    ：本任务私有过程目录，含各格工作副本（
+                    <code className="bg-white px-1 rounded">tile_c_…</code>
+                    ）与合并中间态 <code className="bg-white px-1 rounded">merged.osm</code>。
+                  </li>
+                </ul>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  流程：选区 → 切格下载（可命中共享缓存）→ 合并 → 写出顶层{' '}
+                  <code className="bg-white px-1 rounded">.osm</code>。删除任务时默认<strong>不会</strong>
+                  清掉 <code className="bg-white px-1 rounded">geo-cells</code>
+                  ，以免影响其他任务复用。
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-3 space-y-2">
+                <div className="font-medium text-slate-800">矢量 · Geofabrik（备选）</div>
+                <ul className="list-disc list-inside space-y-1.5 leading-relaxed">
+                  <li>
+                    直接得到{' '}
+                    <code className="bg-white px-1 rounded">区域名-短ID.osm.pbf</code>
+                    （或源站提供的文件名），一般<strong>没有</strong>分块{' '}
+                    <code className="bg-white px-1 rounded">geo-cells</code>。
+                  </li>
+                  <li>适合已有国家/省州等现成提取包链接的场景。</li>
+                </ul>
+              </div>
+
+              <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 space-y-2">
+                <div className="font-medium text-slate-800">栅格 · XYZ 瓦片</div>
+                <ul className="list-disc list-inside space-y-1.5 leading-relaxed">
+                  <li>
+                    <code className="bg-white px-1 rounded">raster/区域名-源ID/</code>
+                    ：按 <code className="bg-white px-1 rounded">z/x/y.扩展名</code>{' '}
+                    存放的影像或街道栅格（PNG / JPEG / WebP 等）。
+                  </li>
+                  <li>
+                    若打包为容器：同目录旁或输出根下可能出现{' '}
+                    <code className="bg-white px-1 rounded">.mbtiles</code> /{' '}
+                    <code className="bg-white px-1 rounded">.pmtiles</code>
+                    ；瓦片目录本身仍保留，便于续下或重新打包。
+                  </li>
+                  <li>栅格流程与矢量 Overpass 的 geo-cell 缓存相互独立，互不复用。</li>
+                </ul>
+              </div>
+
+              <div className="rounded-lg border border-violet-200 bg-violet-50/60 p-3 space-y-2">
+                <div className="font-medium text-slate-800">矢量瓦片转换（Planetiler）</div>
+                <ul className="list-disc list-inside space-y-1.5 leading-relaxed">
+                  <li>
+                    在已有 <code className="bg-white px-1 rounded">.osm</code> /{' '}
+                    <code className="bg-white px-1 rounded">.osm.pbf</code> 上生成{' '}
+                    <code className="bg-white px-1 rounded">.pmtiles</code> 或{' '}
+                    <code className="bg-white px-1 rounded">.mbtiles</code>
+                    ，写在输出目录（文件名可在转换对话框中指定）。
+                  </li>
+                  <li>输入的 OSM 文件不会被删除；转换失败可保留原数据重试。</li>
+                </ul>
+              </div>
+
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <div className="font-medium text-slate-800">跨任务共享与可删性</div>
+                <ul className="list-disc list-inside space-y-1.5 leading-relaxed">
+                  <li>
+                    <strong>共享</strong>：仅 Overpass 路径下的{' '}
+                    <code className="bg-white px-1 rounded">.tile-cache/geo-cells/</code>
+                    。精确重合的格子会命中缓存；裁切后的边格有独立 key，不会误当完整格复用。
+                  </li>
+                  <li>
+                    <strong>可安全删（占空间）</strong>：某任务的{' '}
+                    <code className="bg-white px-1 rounded">.tile-cache/区域名-短ID/</code>
+                    、已不需要的{' '}
+                    <code className="bg-white px-1 rounded">raster/…</code>
+                    瓦片目录。删后该任务无法断点续下，但顶层已完成的{' '}
+                    <code className="bg-white px-1 rounded">.osm</code> / 打包文件仍可用。
+                  </li>
+                  <li>
+                    <strong>慎删</strong>：
+                    <code className="bg-white px-1 rounded">geo-cells</code>
+                    （影响所有后续 Overpass 复用）、顶层成果{' '}
+                    <code className="bg-white px-1 rounded">.osm</code> /{' '}
+                    <code className="bg-white px-1 rounded">.pmtiles</code>。
+                  </li>
+                  <li>
+                    任务卡片「删除」可选是否删磁盘文件；归档只从侧栏隐藏，不删文件。
+                  </li>
+                </ul>
+              </div>
+            </div>
           </Section>
 
           {/* FAQ */}
@@ -258,6 +373,14 @@ export function HelpGuidePanel({ open, onClose }: { open: boolean; onClose: () =
                 <dt className="font-medium text-slate-800">为什么按钮写的是「下载 OSM」而不是 PBF？</dt>
                 <dd className="text-slate-600 mt-0.5">
                   当前默认路径通过 Overpass 得到 XML 格式的 .osm 文件；生成 PMTiles 时会在本地自动转为 PBF。
+                </dd>
+              </div>
+              <div>
+                <dt className="font-medium text-slate-800">输出目录里一堆 .tile-cache 能删吗？</dt>
+                <dd className="text-slate-600 mt-0.5">
+                  任务私有子目录可删以省空间；共享的{' '}
+                  <code className="bg-slate-100 px-1 rounded">geo-cells</code>{' '}
+                  建议保留。详见上文「输出目录里都有什么」。
                 </dd>
               </div>
               <div>

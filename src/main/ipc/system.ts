@@ -275,13 +275,18 @@ export function registerSystemHandlers(ipcMain: IpcMain) {
   ipcMain.handle('system:openFolder', async (_e, p: string): Promise<IpcResult<any>> => {
     try {
       if (!p) return err('Empty path');
+      // File → reveal + select in Explorer (do not open the file).
+      // Directory / missing → open the containing folder.
+      if (existsSync(p) && statSync(p).isFile()) {
+        shell.showItemInFolder(p);
+        return ok();
+      }
       let folder = p;
       if (!existsSync(p)) {
         folder = dirname(p);
         mkdirSync(folder, { recursive: true });
       } else {
-        const st = statSync(p);
-        folder = st.isDirectory() ? p : dirname(p);
+        folder = statSync(p).isDirectory() ? p : dirname(p);
       }
       if (!existsSync(folder)) {
         mkdirSync(folder, { recursive: true });

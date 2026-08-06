@@ -165,6 +165,8 @@ export interface Task {
   metadata: Record<string, unknown> | null;
   /** Created at epoch ms */
   created_at: number;
+  /** Archived tasks stay in history but leave the sidebar queue */
+  archived?: boolean;
 }
 
 export interface TaskLogLine {
@@ -215,6 +217,8 @@ export interface ExposedApi {
   /** Rename a completed download task (display name + on-disk artifacts). */
   renameTask(taskId: string, newName: string): Promise<IpcResult<Task>>;
   clearCompletedTasks(): Promise<IpcResult<void>>;
+  /** Archive finished tasks (sidebar hide; history keeps them). */
+  archiveCompletedTasks(): Promise<IpcResult<void>>;
   clearAllTasks(): Promise<IpcResult<void>>;
 
   // Live log stream
